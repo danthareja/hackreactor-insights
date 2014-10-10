@@ -2,7 +2,8 @@
 <html>
   <head>
     <script src="components/angular/angular.min.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/APIService.js"></script>
 
     <link rel="stylesheet" type="text/css" href="styles/main.css">
 
@@ -12,6 +13,6 @@
     <title>Hack Reactor Stats</title>
   </head>
   <body ng-app="hrStats" ng-controller="MainController">
-    {{hi}}
+    <button ng-click="getData()">Get Data</button>
   </body>
 </html>
