@@ -8,6 +8,7 @@ var cookieParser = require("cookie-parser");
 var bodyParser = require("body-parser");
 var methodOverride = require("method-override");
 var session = require("express-session");
+var MongoStore = require('connect-mongo')({ session: session });
 var static = require("serve-static");
 var passport = require("passport");
 var mongoose = require("mongoose");
@@ -54,6 +55,10 @@ app.use(session({
   resave: true,
   saveUninitialized: true,
   secret: secret.session,
+  store: new MongoStore({
+    url: secret.db,
+    auto_reconnect: true
+  })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -72,6 +77,7 @@ app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, 
 app.get("/auth/github", passport.authenticate("github"));
 app.get("/auth/github/callback", passport.authenticate("github"), function(req, res) {
   // Successful authentication, redirect back to Angular
+  console.log("Successful github authentication!");
   res.redirect("/");
 });
 

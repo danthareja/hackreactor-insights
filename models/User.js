@@ -4,12 +4,7 @@ var userSchema = new mongoose.Schema({
   email: { type: String, unique: true, lowercase: true },
   password: String,
 
-  facebook: String,
-  twitter: String,
-  google: String,
   github: String,
-  instagram: String,
-  linkedin: String,
   tokens: Array,
 
   profile: {
