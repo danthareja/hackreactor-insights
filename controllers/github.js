@@ -21,7 +21,6 @@ exports.getGithub = function(req, res) {
   });
 
   github.user.getFollowingFromUser({ user: "danthareja" }, function(err, data) {
-    console.log(JSON.stringify(data));
     res.send(data);
   });
 };

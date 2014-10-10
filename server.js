@@ -68,13 +68,13 @@ app.use(static(__dirname + "/public", "index.html")); // serve index, Angular ta
  * GitHub API routes.
  */
 
-app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getGithub);
+app.get("/api/github/", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getGithub);
 
 /**
  * OAuth sign-in routes.
  */
 
-app.get("/auth/github", passport.authenticate("github"));
+app.get("/auth/github/", passport.authenticate("github"));
 app.get("/auth/github/callback", passport.authenticate("github"), function(req, res) {
   // Successful authentication, redirect back to Angular
   console.log("Successful github authentication!");
