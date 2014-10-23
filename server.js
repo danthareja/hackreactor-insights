@@ -3,6 +3,7 @@
  */
 
 var express = require("express");
+var cors = require("cors");
 var morgan = require("morgan");
 var cookieParser = require("cookie-parser");
 var bodyParser = require("body-parser");
@@ -50,7 +51,7 @@ app.use(morgan("dev")); // logger in dev mode
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(methodOverride());
-app.use(cookieParser());
+app.use(cors()); // Does nothing!
 app.use(session({
   resave: true,
   saveUninitialized: true,
@@ -68,13 +69,13 @@ app.use(static(__dirname + "/public", "index.html")); // serve index, Angular ta
  * GitHub API routes.
  */
 
-app.get("/api/github/", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getGithub);
+app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getGithub);
 
 /**
  * OAuth sign-in routes.
  */
 
-app.get("/auth/github/", passport.authenticate("github"));
+app.get("/auth/github", passport.authenticate("github"));
 app.get("/auth/github/callback", passport.authenticate("github"), function(req, res) {
   // Successful authentication, redirect back to Angular
   console.log("Successful github authentication!");
@@ -95,7 +96,7 @@ app.get("*", function(req, res) {
  */
 
 app.listen(app.get("port"), function() {
-  console.log("We're making it happen on port %d", app.get("port"));
+  console.log("Magic is happening on port %d", app.get("port"));
 });
 
 module.exports = app;

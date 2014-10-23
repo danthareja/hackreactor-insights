@@ -53,22 +53,17 @@ passport.use(new GitHubStrategy(secret.github, function(accessToken, refreshToke
 //   login page.
 
 exports.isAuthenticated = function(req, res, next) {
-  console.log("req.path from isAuth", req.path);
-  var provider = req.path.split('/').slice(-1)[0];
-  console.log("provider from isAuth", provider);
-
+  console.log(req.user);
   if (req.isAuthenticated()) { return next(); }
-  console.log("Not authenticated, redirecting to ", '/auth/' + provider )
-  res.redirect('/auth/' + provider);
+  console.log("Not authenticated, redirecting to ", '/auth/github');
+  res.redirect('/auth/github');
 };
 
 exports.isAuthorized = function(req, res, next) {
-  var provider = req.path.split('/').slice(-1)[0];
-
-  if (_.find(req.user.tokens, { kind: provider })) {
+  if (_.find(req.user.tokens, { kind: 'github' })) {
     next();
   } else {
-    console.log("Not authenticated, redirecting to ", '/auth/' + provider )
-    res.redirect('/auth/' + provider);
+    console.log("Not authorized, redirecting to ", '/auth/github');
+    res.redirect('/auth/github');
   }
 };
