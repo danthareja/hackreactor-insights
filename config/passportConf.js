@@ -1,4 +1,3 @@
-var _ = require("lodash");
 var passport = require("passport");
 var GitHubStrategy = require("passport-github").Strategy;
 var User = require('../models/User');
@@ -22,27 +21,22 @@ passport.deserializeUser(function(id, done) {
 
 passport.use(new GitHubStrategy(secret.github, function(accessToken, refreshToken, profile, done) {
   console.log("accessToken in passport strat", accessToken);
-  User.findOne({ github: profile.id }, function(err, existingUser) {
+  User.findOne({ githubId: profile.id }, function(err, existingUser) {
     if (existingUser) return done(null, existingUser);
-    User.findOne({ email: profile._json.email }, function(err, existingEmailUser) {
-      if (existingEmailUser) {
-        console.log('errors', { msg: 'There is already an account using this email address. Sign in to that account and link it with GitHub manually from Account Settings.' });
-        done(err);
-      } else {
-        var user = new User();
-        user.email = profile._json.email;
-        user.github = profile.id;
-        user.tokens.push({ kind: 'github', accessToken: accessToken });
-        user.profile.name = profile.displayName;
-        user.profile.picture = profile._json.avatar_url;
-        user.profile.location = profile._json.location;
-        user.profile.website = profile._json.blog;
-        user.save(function(err) {
-          console.log("saving new user", user);
-          done(err, user);
-        });
-      }
-    });
+    else {
+      var user = new User();
+      user.email = profile._json.email;
+      user.githubId = profile.id;
+      user.token = accessToken;
+      user.profile.name = profile.displayName;
+      user.profile.picture = profile._json.avatar_url;
+      user.profile.location = profile._json.location;
+      user.profile.website = profile._json.blog;
+      user.save(function(err) {
+        console.log("saving new user", user);
+        done(err, user);
+      });
+    }
   });
 }));
 
@@ -60,7 +54,7 @@ exports.isAuthenticated = function(req, res, next) {
 };
 
 exports.isAuthorized = function(req, res, next) {
-  if (_.find(req.user.tokens, { kind: 'github' })) {
+  if (req.user.token) {
     next();
   } else {
     console.log("Not authorized, redirecting to ", '/auth/github');

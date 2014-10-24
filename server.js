@@ -18,7 +18,7 @@ var mongoose = require("mongoose");
  * Controllers (route handlers).
  */
 
- var githubController = require('./controllers/github');
+ var github = require('./controllers/github');
 
 /**
  * API keys and Passport configuration.
@@ -66,12 +66,6 @@ app.use(passport.session());
 app.use(static(__dirname + "/public", "index.html")); // serve index, Angular takes over
 
 /**
- * GitHub API routes.
- */
-
-app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getGithub);
-
-/**
  * OAuth sign-in routes.
  */
 
@@ -81,6 +75,13 @@ app.get("/auth/github/callback", passport.authenticate("github"), function(req, 
   console.log("Successful github authentication!");
   res.redirect("/");
 });
+
+/**
+ * GitHub API routes.
+ */
+
+app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, github.get);
+// app.get("/api/github/user", passportConf.isAuthenticated, passportConf.isAuthorized, github.getUser);
 
 
 /**

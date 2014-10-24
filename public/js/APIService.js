@@ -4,7 +4,8 @@ angular.module("hrStats")
   this.authenticate = function() {
     $window.location.href = "http://127.0.0.1:1337/auth/github"; // Super hacky
     // $http({
-    //   url: "//127.0.0.1:1337/auth/github",
+    //   // url: "//127.0.0.1:1337/auth/github",
+    //   url: "/auth/github",
     //   method: "GET"
     // })
     // .success(function(data) {
