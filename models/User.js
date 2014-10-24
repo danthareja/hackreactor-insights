@@ -14,20 +14,17 @@ var userSchema = new mongoose.Schema({
     picture: { type: String, default: '' }
   },
 
-  /** Stores all data associated with the logged in user here in the following format
-   [
-    { 
-      username: 'danthareja', 
-      repos: [
-        { 
-          name: 'hr-stats',
-          stats: [** number of additions and deletions per week ** ]
-        }
-      ]
-    }
-   ]
-  */
-  orgMembers: Array
+  // Stores all data associated with the logged in user here in the following format
+  orgMembers: [{
+    username: String,
+    repos: [{
+      name: String,
+      stats: {
+        codeFrequency: Array,
+        punchCard: Array
+      }
+    }]
+  }]
 });
 
 module.exports = mongoose.model('User', userSchema);

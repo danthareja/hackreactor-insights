@@ -16,36 +16,20 @@ angular.module("hrStats")
     // });
   };
 
-  this.get = function() {
-    var url = "/api/github";
-    $http.get(url)
-      .success(function(data) {
-        console.log("Here's yo github data from get: ", data);
-      })
-      .error(function(data) {
-        console.log("Error getting github data", data);
-      });
-  };
+  this.test = get("/api/github");
+  this.getMembers = get("/api/github/members");
+  this.getMemberRepos = get("/api/github/members/repos");
+  this.getRepoStats = get("/api/github/members/repos/stats");
 
-  this.getMembers = function() {
-    var url = "/api/github/members";
-    $http.get(url)
+  function get(url) {
+    return function() {
+      $http.get(url)
       .success(function(data) {
-        console.log("Here's yo github data from getMembers: ", data);
+        console.log("Here's yo github data from" + url, data);
       })
       .error(function(data) {
-        console.log("Error getting github data", data);
+        console.log("Error getting github data from" + url, data);
       });
-  };
-
-  this.getMemberRepos = function() {
-    var url = "/api/github/members/repos";
-    $http.get(url)
-      .success(function(data) {
-        console.log("Here's yo github data from getMemberRepos: ", data);
-      })
-      .error(function(data) {
-        console.log("Error getting github data", data);
-      });
-  };
+    };
+  }
 }]);
