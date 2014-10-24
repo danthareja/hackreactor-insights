@@ -12,10 +12,22 @@ var userSchema = new mongoose.Schema({
     location: { type: String, default: '' },
     website: { type: String, default: '' },
     picture: { type: String, default: '' }
-  }
+  },
 
-  // Data to store
-
+  /** Stores all data associated with the logged in user here in the following format
+   [
+    { 
+      username: 'danthareja', 
+      repos: [
+        { 
+          name: 'hr-stats',
+          stats: [** number of additions and deletions per week ** ]
+        }
+      ]
+    }
+   ]
+  */
+  orgMembers: Array
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -81,7 +81,9 @@ app.get("/auth/github/callback", passport.authenticate("github"), function(req, 
  */
 
 app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, github.get);
-// app.get("/api/github/user", passportConf.isAuthenticated, passportConf.isAuthorized, github.getUser);
+app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, github.getMembers);
+app.get("/api/github/members/repos", passportConf.isAuthenticated, passportConf.isAuthorized, github.getMemberRepos);
+// app.get("/api/github/members/repos/stats", passportConf.isAuthenticated, passportConf.isAuthorized, github.getMemberRepos);
 
 
 /**
