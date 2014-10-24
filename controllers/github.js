@@ -123,7 +123,7 @@ exports.getMemberRepos = function(req, res) {
       // Push recently updated repos to mongo
       repos && repos.forEach(function(repo) {
         if (wasUpdatedThisWeek(repo)) {
-          console.log("adding ", repo.full_name, " to ", member.username, "'s repos array");
+          console.log("adding ", repo.full_name);
           member.repos.push({
             name: repo.name,
             stats: []
@@ -184,7 +184,6 @@ exports.getRepoStats = function(req, res) {
 
   // Get stats for every member's repos
   members.forEach(function(member) {
-    console.log("getting stats for member ", member);
     member.repos.length > 0 && member.repos.forEach(function(repo) {
       // Set http request options, this one's not in our handy library
       // Code frequency
@@ -210,10 +209,10 @@ exports.getRepoStats = function(req, res) {
       // Make requests
       http(getCodeFrequency, function(err, stats) {
         if (err) console.log("error getting code freq");
-        repo.stats.codeFrequency = stats;
+        repo.stats.codeFrequency = stats.body;
         http(getPunchCard, function(err, stats) {
           if (err) console.log("error getting punch card");
-          repo.stats.punchCard = stats;
+          repo.stats.punchCard = stats.body;
           console.log("repo found! getting stats for member ", member.username, " and repo ",  repo);
           console.log("number of completed requests down: ", completedRequests);
           if (++completedRequests === user.repoCount) {

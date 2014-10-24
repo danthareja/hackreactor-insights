@@ -21,8 +21,8 @@ var userSchema = new mongoose.Schema({
     repos: [{
       name: String,
       stats: {
-        codeFrequency: Array,
-        punchCard: Array
+        codeFrequency: String,
+        punchCard: String
       }
     }]
   }]
