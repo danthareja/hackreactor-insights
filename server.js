@@ -18,7 +18,7 @@ var mongoose = require("mongoose");
  * Controllers (route handlers).
  */
 
- var github = require('./controllers/github');
+ var githubController = require('./controllers/github');
 
 /**
  * API keys and Passport configuration.
@@ -80,10 +80,10 @@ app.get("/auth/github/callback", passport.authenticate("github"), function(req, 
  * GitHub API routes.
  */
 
-app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, github.test);
-app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, github.getMembers);
-app.get("/api/github/members/repos", passportConf.isAuthenticated, passportConf.isAuthorized, github.getMemberRepos);
-app.get("/api/github/members/repos/stats", passportConf.isAuthenticated, passportConf.isAuthorized, github.getRepoStats);
+app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.test);
+app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMembers);
+app.get("/api/github/members/repos", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMemberRepos);
+app.get("/api/github/members/repos/stats", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getRepoStats);
 
 
 /**

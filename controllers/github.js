@@ -1,3 +1,4 @@
+var Promise = require("bluebird");
 var http = require("request");
 var GitHubApi = require("github");
 var User = require("../models/User");
@@ -7,24 +8,54 @@ var github = new GitHubApi({
   version: "3.0.0"
 });
 
+// Promisify API methods
+Promise.promisifyAll(github);
+Promise.promisifyAll(github.user);
+Promise.promisifyAll(github.orgs);
+Promise.promisifyAll(github.repos);
+
+/**
+ * Helper methods 
+ */
+
+// Authenticate user 
+var authenticate = function(user) {
+  github.authenticate({
+    type: "oauth",
+    token: user.token
+  });
+  console.log("authenticated user!");
+};
+
+// Save data to mongo
+var saveData = function(req, res) {
+  req.user.save(function(err, user, numberAffected) {
+    if (err) console.log("Error saving members to mongo", err);
+    else {
+      console.log("All data saved to mongo! ", numberAffected, " entries affected");
+      res.send(user.orgMembers);
+    }
+  });
+};
+
 /**
  * GET /api/github
  * GitHub API Example. Gets authenticated user's data.
  */
 
 exports.test = function(req, res) {
-  console.log("github.get called");
-  console.log("User in get: ",req.user);
-  console.log("Token in get", req.user.token);
-  console.log(req.user.orgMembers);
+  var user = req.user;
+  console.log("User in test: ", user.profile.name);
+  console.log("Token in get", user.token);
 
-  github.authenticate({
-    type: "oauth",
-    token: req.user.token
-  });
+  authenticate(user);
 
-  github.user.get({ user: "danthareja" }, function(err, data) {
+  github.user.getAsync({})
+  .then(function(data) {
     res.send(data);
+  })
+  .catch(function(e) {
+    console.log(e);
   });
 };
 
@@ -34,55 +65,36 @@ exports.test = function(req, res) {
  * Stores all members in user.orgMembers array in Mongo
  */
 
-// TODO: refactor and abstract number of pages out (github pagnation)
 exports.getMembers = function(req, res) {
-  console.log("github.getMembers called");
   var user = req.user;
+  var pages = 2;
   user.orgMembers = [];
   
-  github.authenticate({
-    type: "oauth",
-    token: user.token
-  });
-  console.log("authenticated user!");
+  authenticate(user);
+  getGithubMembers();
 
-  console.log("Requesting page 1 members");
-  github.orgs.getMembers({ org: "hackreactor", per_page: 100, page: 1 }, function(err, members) {
-    console.log("Got page 1 members! ", members);
-    // Push all members to orgMembers array
-    members.forEach(function(member) {
-      console.log("adding ", member.login);
-      user.orgMembers.push({
-        username: member.login,
-        repos: []
-      });
-    });
-
-    // Do it again for the second page
-    console.log("Requesting page 2 members");
-    github.orgs.getMembers({ org: "hackreactor", per_page: 100, page: 2 }, function(err, members) {
-    console.log("Got page 2 members! ", members);
-      
-      // Push all page 2 members to orgMembers array
-      members.forEach(function(member) {
-        console.log("adding ", member.login);
-        user.orgMembers.push({
-          username: member.login,
-          repos: []
+  // Gets all the members in order to completion, then saves data
+  function getGithubMembers(page) {
+    page = page || 1;
+    // After all members gotten, save the data and send a response
+    if (page > pages) {
+      saveData(req, res);
+    } else {
+      console.log("Requesting page ", page, " members");
+      github.orgs.getMembersAsync({ org: "hackreactor", per_page: 100, page: page})
+      .then(function(members) {
+        members.forEach(function(member) {
+          console.log("adding ", member.login);
+          user.orgMembers.push({
+            username: member.login,
+            repos: []
+          });
         });
+        // Recursively call with the next page until set page number above
+        getGithubMembers(page + 1);
       });
-
-      // Save data to mongo
-      user.save(function(err, user, numberAffected) {
-        if (err) console.log("Error saving members to mongo", err);
-        else {
-          console.log("Page 2 members saved to mongo! ", numberAffected, " entries affected");
-          res.send(user.orgMembers);
-        }
-      });
-
-    });
-  });
+    }
+  }
 };
 
 
@@ -228,7 +240,6 @@ exports.getRepoStats = function(req, res) {
           }
         });
       });
-
     });
   });
 };

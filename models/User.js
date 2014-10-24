@@ -1,3 +1,4 @@
+var Promise = require("bluebird");
 var mongoose = require("mongoose");
 
 var userSchema = new mongoose.Schema({
@@ -14,7 +15,7 @@ var userSchema = new mongoose.Schema({
     picture: { type: String, default: '' }
   },
 
-  // Stores all data associated with the logged in user here in the following format
+  // Stores all data from github queries in the following format
   repoCount: Number,
   orgMembers: [{
     username: String,
