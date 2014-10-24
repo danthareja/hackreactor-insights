@@ -97,6 +97,7 @@ exports.getMemberRepos = function(req, res) {
   console.log("github.getMemberRepos called");
   var user = req.user;
   var members = user.orgMembers;
+  var repoCount = 0;
   var completedRequests = 0;
   
   // Authenticate
@@ -127,11 +128,15 @@ exports.getMemberRepos = function(req, res) {
             name: repo.name,
             stats: []
           });
+          repoCount++; // increment counter on mongo for repoStats
+          console.log("repo count is at ", repoCount);
         }
       });
 
       // Waits until all repos have been completed until res.send
       if (++completedRequests === members.length) {
+        // Update repo count
+        user.repoCount = repoCount;
         // Save data to mongo
         user.save(function(err, user, numberAffected) {
           if (err) {
@@ -140,7 +145,7 @@ exports.getMemberRepos = function(req, res) {
             console.log("repos saved to mongo!", numberAffected, " entries affected");
           }
         });
-        res.send(req.user.orgMembers);
+        res.send(members);
       }
     });
   });
@@ -163,13 +168,12 @@ exports.getMemberRepos = function(req, res) {
  */
 
 // TODO: Figure out what stats to display. I'm gonna try to get punch_card and code_freq for all of them
-// TODO: Filter repos update in this past week to query for punch_card (lookup If-Modified-Since header)
-// TODO: Currently at 5753 total repos, definitelyy need to filter these --> down to 313
+// TODO: Filter repos update in this past week to query for punch_card (lookup If-Modified-Since header) ** Currently filtered based on past week **
 exports.getRepoStats = function(req, res) {
   console.log("github.getRepoStats called");
   var user = req.user;
   var members = user.orgMembers;
-  var membersCompleted = 0;
+  var completedRequests = 0;
   
   // Authenticate
   github.authenticate({
@@ -180,11 +184,12 @@ exports.getRepoStats = function(req, res) {
 
   // Get stats for every member's repos
   members.forEach(function(member) {
-    membersCompleted++;
+    console.log("getting stats for member ", member);
     member.repos.length > 0 && member.repos.forEach(function(repo) {
       // Set http request options, this one's not in our handy library
-      var codeFreqUrl = "https://api.github.com/repos/danthareja/snowmentum/stats/code_frequency" + "?access_token=" + user.token;
-      var options = {
+      // Code frequency
+      var codeFreqUrl = "https://api.github.com/repos/" + member.username + "/" + repo.name + "/stats/code_frequency" + "?access_token=" + user.token;
+      var getCodeFrequency = {
         url: codeFreqUrl,
         type: "GET",
         headers: {
@@ -192,10 +197,39 @@ exports.getRepoStats = function(req, res) {
         }
       };
 
-      // Make request
-      http(options, function(err, stats) {
-        res.send(data);
+      // Punch card
+      var punchCardUrl = "https://api.github.com/repos/" + member.username + "/" + repo.name + "/stats/punch_card" + "?access_token=" + user.token;
+      var getPunchCard = {
+        url: punchCardUrl,
+        type: "GET",
+        headers: {
+          "User-Agent": "danthareja"
+        }
+      };
+
+      // Make requests
+      http(getCodeFrequency, function(err, stats) {
+        if (err) console.log("error getting code freq");
+        repo.stats.codeFrequency = stats;
+        http(getPunchCard, function(err, stats) {
+          if (err) console.log("error getting punch card");
+          repo.stats.punchCard = stats;
+          console.log("repo found! getting stats for member ", member.username, " and repo ",  repo);
+          console.log("number of completed requests down: ", completedRequests);
+          if (++completedRequests === user.repoCount) {
+            // Save data to mongo
+            user.save(function(err, user, numberAffected) {
+              if (err) {
+                console.log("Error saving stats to mongo", err);
+              } else {
+                console.log("stats saved to mongo!", numberAffected, " entries affected");
+              }
+            });
+            res.send(members);
+          }
+        });
       });
+
     });
   });
 };
