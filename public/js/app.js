@@ -6,4 +6,6 @@ angular.module("hrStats", [])
   $scope.getMembers = GithubAPIService.getMembers;
   $scope.getMemberRepos = GithubAPIService.getMemberRepos;
   $scope.getRepoStats = GithubAPIService.getRepoStats;
+  $scope.getPunchCard = GithubAPIService.getPunchCard;
+  $scope.getCodeFrequency = GithubAPIService.getCodeFrequency;
 });

@@ -3,11 +3,13 @@ var GitHubStrategy = require("passport-github").Strategy;
 var User = require('../models/User');
 var secret = require("./secret");
 
-// Passport session setup.
-//   To support persistent login sessions, Passport needs to be able to
-//   serialize users into and deserialize users out of the session.  Typically,
-//   this will be as simple as storing the user ID when serializing, and finding
-//   the user by ID when deserializing. 
+/**
+ * Passport session setup.
+ *   To support persistent login sessions, Passport needs to be able to
+ *   serialize users into and deserialize users out of the session.  Typically,
+ *   this will be as simple as storing the user ID when serializing, and finding
+ *   the user by ID when deserializing. 
+ */
 
 passport.serializeUser(function(user, done) {
   done(null, user.id);
@@ -18,6 +20,13 @@ passport.deserializeUser(function(id, done) {
     done(err, user);
   });
 });
+
+/**
+ * Use the GitHubStrategy within Passport.
+ *   Strategies in Passport require a `verify` function, which accept
+ *   credentials (in this case, an accessToken, refreshToken, and GitHub
+ *   profile), and invoke a callback with a user object.
+*/
 
 passport.use(new GitHubStrategy(secret.github, function(accessToken, refreshToken, profile, done) {
   console.log("accessToken in passport strat", accessToken);
@@ -40,11 +49,12 @@ passport.use(new GitHubStrategy(secret.github, function(accessToken, refreshToke
   });
 }));
 
-// Simple route middleware to ensure user is authenticated.
-//   Use this route middleware on any resource that needs to be protected.  If
-//   the request is authenticated (typically via a persistent login session),
-//   the request will proceed.  Otherwise, the user will be redirected to the
-//   login page.
+/**
+ * Simple route middleware to ensure user is authenticated.
+ *   Use this route middleware on any resource that needs to be protected.  If
+ *   the request is authenticated (typically via a persistent login session),
+ *   the request will proceed.  Otherwise, the user will be redirected to the login page.
+ */
 
 exports.isAuthenticated = function(req, res, next) {
   if (req.isAuthenticated()) { return next(); }

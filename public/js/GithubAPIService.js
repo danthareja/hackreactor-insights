@@ -17,19 +17,24 @@ angular.module("hrStats")
     // });
   };
 
-  this.test = get("/api/github");
+  // Github
+  this.test = get("/api/github/test");
   this.getMembers = get("/api/github/members");
   this.getMemberRepos = get("/api/github/members/repos");
   this.getRepoStats = get("/api/github/members/repos/stats");
+
+  // Mongo
+  this.getCodeFrequency = get("/api/stats/code_frequency");
+  this.getPunchCard = get("/api/stats/punch_card");
 
   function get(url) {
     return function() {
       $http.get(url)
       .success(function(data) {
-        console.log("Here's yo github data from" + url, data);
+        console.log("Here's yo data from" + url, data);
       })
       .error(function(data) {
-        console.log("Error getting github data from" + url, data);
+        console.log("Error getting data from" + url, data);
       });
     };
   }

@@ -19,6 +19,7 @@ var mongoose = require("mongoose");
  */
 
  var githubController = require('./controllers/github');
+ var mongoController = require('./controllers/mongo');
 
 /**
  * API keys and Passport configuration.
@@ -77,13 +78,20 @@ app.get("/auth/github/callback", passport.authenticate("github"), function(req, 
 });
 
 /**
- * GitHub API routes.
+ * GitHub API routes. Gets data from github and saves it to mongo.
  */
 
-app.get("/api/github", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.test);
+app.get("/api/github/test", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.test);
 app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMembers);
 app.get("/api/github/members/repos", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMemberRepos);
 app.get("/api/github/members/repos/stats", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getRepoStats);
+
+/**
+ * Mongo routes. Gets stored repo statistics and converts it to d3 friendly format.
+ */
+
+app.get("/api/stats/code_frequency", passportConf.isAuthenticated, passportConf.isAuthorized, mongoController.getCodeFrequency);
+app.get("/api/stats/punch_card", passportConf.isAuthenticated, passportConf.isAuthorized, mongoController.getPunchCard);
 
 
 /**

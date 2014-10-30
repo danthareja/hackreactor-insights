@@ -19,6 +19,7 @@ var github = new GitHubApi({
 github.repos.stats = {};
 github.repos.stats.codeFrequency = getGithubStats("code_frequency");
 github.repos.stats.punchCard = getGithubStats("punch_card");
+github.repos.stats.commitActivity = getGithubStats("commit_activity"); // Not used
 
 function getGithubStats(type) {
   return function(options, callback) {
@@ -47,7 +48,7 @@ Promise.promisifyAll(github.repos);
 Promise.promisifyAll(github.repos.stats);
 
 /**
- * Helper methods 
+ * Helper functions 
  */
 
 // Authenticate user 
@@ -60,6 +61,7 @@ var authenticate = function(user) {
 };
 
 // Save data to mongo
+// TODO: Think about what response to send
 var saveData = function(req, res) {
   req.user.save(function(err, user, numberAffected) {
     if (err) console.log("Error saving data to mongo", err);
@@ -193,10 +195,12 @@ exports.getMemberRepos = function(req, res) {
  * GET /api/github/members/repos/stats
  * Goes through each repo in the authenticated user's orgMembers array and gets all stats associated with each repo
  * Stores all stats in user.orgMembers.[[member]].[[repo]].stats array in mongo
+ * 
+ * This is an expensive call so Github only returns archived data
+ * We have to make the calls twice in order to make sure they are archived. (There's got to be a better way)
+ * NOTE: All stats are stored as a stringified form
  */
 
-// This is an expensive call so Github only returns archived data
-// We have to make the calls twice in order to make sure they are archived. (There's got to be a better way)
 exports.getRepoStats = function(req, res) {
   console.log("github.getRepoStats called");
   var user = req.user;

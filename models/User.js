@@ -23,10 +23,12 @@ var userSchema = new mongoose.Schema({
       name: String,
       stats: {
         codeFrequency: String,
-        punchCard: String
+        punchCard: String,
+        commitActivity: String,
       }
     }]
   }]
+
 });
 
 module.exports = mongoose.model('User', userSchema);
