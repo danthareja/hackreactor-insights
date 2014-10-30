@@ -47,7 +47,6 @@ passport.use(new GitHubStrategy(secret.github, function(accessToken, refreshToke
 //   login page.
 
 exports.isAuthenticated = function(req, res, next) {
-  console.log(req.user);
   if (req.isAuthenticated()) { return next(); }
   console.log("Not authenticated, redirecting to ", '/auth/github');
   res.redirect('/auth/github');

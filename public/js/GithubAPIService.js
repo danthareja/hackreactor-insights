@@ -1,6 +1,7 @@
 angular.module("hrStats")
 
 .service("GithubAPIService", ["$http", "$window", function($http, $window) {
+  // TODO: figure out this CORS!
   this.authenticate = function() {
     $window.location.href = "http://127.0.0.1:1337/auth/github"; // Super hacky
     // $http({

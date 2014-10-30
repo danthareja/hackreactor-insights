@@ -16,7 +16,7 @@ var userSchema = new mongoose.Schema({
   },
 
   // Stores all data from github queries in the following format
-  repoCount: Number,
+  recentlyUpdatedRepoCount: Number,
   orgMembers: [{
     username: String,
     repos: [{

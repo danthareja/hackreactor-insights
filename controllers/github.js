@@ -1,18 +1,50 @@
+// TODO: add contional headers for each API call (lookup If-Modified-Since header)
 var Promise = require("bluebird");
 var http = require("request");
 var GitHubApi = require("github");
 var User = require("../models/User");
 
-// Instantiate API
+/**
+ * Instantiate API
+ */
+
 var github = new GitHubApi({
   version: "3.0.0"
 });
 
-// Promisify API methods
+/**
+ * API extensions
+ */
+
+github.repos.stats = {};
+github.repos.stats.codeFrequency = getGithubStats("code_frequency");
+github.repos.stats.punchCard = getGithubStats("punch_card");
+
+function getGithubStats(type) {
+  return function(options, callback) {
+    var getOptions = {
+      url: "https://api.github.com/repos/" + options.username + "/" + options.repo + "/stats/" + type + "?access_token=" + options.token,
+      type: "GET",
+      headers: {
+        "User-Agent": "danthareja"
+      }
+    };
+    http(getOptions, function(err, stats) {
+      // Callback with only data we're interested in
+      callback(err, stats.body)
+    });
+  }
+}
+
+/**
+ * Promisify API
+ */
+
 Promise.promisifyAll(github);
 Promise.promisifyAll(github.user);
 Promise.promisifyAll(github.orgs);
 Promise.promisifyAll(github.repos);
+Promise.promisifyAll(github.repos.stats);
 
 /**
  * Helper methods 
@@ -30,7 +62,7 @@ var authenticate = function(user) {
 // Save data to mongo
 var saveData = function(req, res) {
   req.user.save(function(err, user, numberAffected) {
-    if (err) console.log("Error saving members to mongo", err);
+    if (err) console.log("Error saving data to mongo", err);
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected");
       res.send(user.orgMembers);
@@ -90,7 +122,7 @@ exports.getMembers = function(req, res) {
             repos: []
           });
         });
-        // Recursively call with the next page until set page number above
+        // Recursively call with the next page until we reach set page number above
         getGithubMembers(page + 1);
       });
     }
@@ -101,23 +133,17 @@ exports.getMembers = function(req, res) {
 /**
  * GET /api/github/members/repos
  * Goes through each member in the authenticated user's orgMembers array and gets all repos associated with each member
- * Stores ONLY REPOS THAT HAVE BEEN UPDATED IN THE PAST WEEK repos in user.orgMembers.[[member]].repos array in mongo
+ * Stores only repos update in the last week in user.orgMembers.[[member]].repos array in mongo
  */
 
-// TODO: abstract out per page options, aync
+// TODO: rethink ++completed requests
 exports.getMemberRepos = function(req, res) {
-  console.log("github.getMemberRepos called");
   var user = req.user;
   var members = user.orgMembers;
+  var completedMembers = 0;
   var repoCount = 0;
-  var completedRequests = 0;
   
-  // Authenticate
-  github.authenticate({
-    type: "oauth",
-    token: user.token
-  });
-  console.log("authenticated user!");
+  authenticate(user);
 
   // For each member, send a request to github for their repos
   members.forEach(function(member) {
@@ -130,8 +156,8 @@ exports.getMemberRepos = function(req, res) {
       per_page: 100
     };
 
-    github.repos.getFromUser(options, function(err, repos) {
-      if (err) console.log(err);
+    github.repos.getFromUserAsync(options)
+    .then(function(repos) {
       // Push recently updated repos to mongo
       repos && repos.forEach(function(repo) {
         if (wasUpdatedThisWeek(repo)) {
@@ -140,24 +166,14 @@ exports.getMemberRepos = function(req, res) {
             name: repo.name,
             stats: []
           });
-          repoCount++; // increment counter on mongo for repoStats
-          console.log("repo count is at ", repoCount);
+          repoCount++; // increment counter on mongo for user.repoCount
         }
       });
 
-      // Waits until all repos have been completed until res.send
-      if (++completedRequests === members.length) {
-        // Update repo count
-        user.repoCount = repoCount;
-        // Save data to mongo
-        user.save(function(err, user, numberAffected) {
-          if (err) {
-            console.log("Error saving repos to mongo", err);
-          } else {
-            console.log("repos saved to mongo!", numberAffected, " entries affected");
-          }
-        });
-        res.send(members);
+      // Waits until all repos have been completed until saving to DB
+      if (++completedMembers === members.length) {
+        user.recentlyUpdatedRepoCount = repoCount;
+        saveData(req, res);
       }
     });
   });
@@ -179,66 +195,42 @@ exports.getMemberRepos = function(req, res) {
  * Stores all stats in user.orgMembers.[[member]].[[repo]].stats array in mongo
  */
 
-// TODO: Figure out what stats to display. I'm gonna try to get punch_card and code_freq for all of them
-// TODO: Filter repos update in this past week to query for punch_card (lookup If-Modified-Since header) ** Currently filtered based on past week **
+// This is an expensive call so Github only returns archived data
+// We have to make the calls twice in order to make sure they are archived. (There's got to be a better way)
 exports.getRepoStats = function(req, res) {
   console.log("github.getRepoStats called");
   var user = req.user;
   var members = user.orgMembers;
-  var completedRequests = 0;
+  var completedRepos = 0;
   
-  // Authenticate
-  github.authenticate({
-    type: "oauth",
-    token: req.user.token
-  });
-  console.log("authenticated user!");
+  authenticate(user);
 
-  // Get stats for every member's repos
   members.forEach(function(member) {
+    // Skip over any member that has no recently updated repos
     member.repos.length > 0 && member.repos.forEach(function(repo) {
-      // Set http request options, this one's not in our handy library
-      // Code frequency
-      var codeFreqUrl = "https://api.github.com/repos/" + member.username + "/" + repo.name + "/stats/code_frequency" + "?access_token=" + user.token;
-      var getCodeFrequency = {
-        url: codeFreqUrl,
-        type: "GET",
-        headers: {
-          "User-Agent": "danthareja"
-        }
-      };
+      var options = {
+        username: member.username,
+        repo: repo.name,
+        token: user.token
+      }
 
-      // Punch card
-      var punchCardUrl = "https://api.github.com/repos/" + member.username + "/" + repo.name + "/stats/punch_card" + "?access_token=" + user.token;
-      var getPunchCard = {
-        url: punchCardUrl,
-        type: "GET",
-        headers: {
-          "User-Agent": "danthareja"
-        }
-      };
+      // Get codeFrequency stats
+      github.repos.stats.codeFrequencyAsync(options)
+      .then(function(stats) {
+        console.log("repo found! got codeFrequency for member ", member.username, " and repo ", repo.name);
+        repo.stats.codeFrequency = stats;
+      });
 
-      // Make requests
-      http(getCodeFrequency, function(err, stats) {
-        if (err) console.log("error getting code freq");
-        repo.stats.codeFrequency = stats.body;
-        http(getPunchCard, function(err, stats) {
-          if (err) console.log("error getting punch card");
-          repo.stats.punchCard = stats.body;
-          console.log("repo found! getting stats for member ", member.username, " and repo ",  repo);
-          console.log("number of completed requests down: ", completedRequests);
-          if (++completedRequests === user.repoCount) {
-            // Save data to mongo
-            user.save(function(err, user, numberAffected) {
-              if (err) {
-                console.log("Error saving stats to mongo", err);
-              } else {
-                console.log("stats saved to mongo!", numberAffected, " entries affected");
-              }
-            });
-            res.send(members);
-          }
-        });
+      // Get punchCard stats
+      github.repos.stats.punchCardAsync(options)
+      .then(function(stats) {
+        console.log("repo found! got punchCard for member ", member.username, " and repo ", repo.name);
+        repo.stats.punchCard = stats;
+        console.log("number of completed requests down: ", completedRepos + 1);
+        // Save data to mongo when all recently updated repos have been accounted for
+        if (++completedRepos === user.recentlyUpdatedRepoCount) {
+          saveData(req, res);
+        }
       });
     });
   });
