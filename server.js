@@ -49,6 +49,7 @@ mongoose.connection.on('error', function() {
  */
 
 app.set("port", process.env.PORT || 1337); // handles deployment
+// app.set("url", process.env.URL || '127.0.0.1'); // handles deployment
 app.use(morgan("dev")); // logger in dev mode
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -67,6 +68,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(static(__dirname + "/public", "index.html")); // serve index, Angular takes over
 
+
 /**
  * OAuth sign-in routes.
  */
@@ -82,12 +84,7 @@ app.get("/auth/github/callback", passport.authenticate("github"), function(req, 
  * GitHub API routes. Gets data from github and saves it to mongo.
  */
 
-// app.get("/api/github/test", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.test);
-// app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMembers);
-// app.get("/api/github/members/repos", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMemberRepos);
-// app.get("/api/github/members/repos/stats", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getRepoStats);
-
-// Refactors github requests into middleware
+// Refactors github requests into middleware. TODO: Error Handling
 app.get("/api/github/all", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMembers, githubMiddleware.getMemberRepos, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
 
 /**

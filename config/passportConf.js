@@ -1,7 +1,13 @@
 var passport = require("passport");
 var GitHubStrategy = require("passport-github").Strategy;
 var User = require('../models/User');
-var secret = require("./secret");
+var secret = require("./secret") || {
+  github: {
+    clientID: process.env.clientID,
+    clientSecret: process.env.clientID,
+    callbackURL: process.env.callbackURL
+  }
+};
 
 /**
  * Passport session setup.

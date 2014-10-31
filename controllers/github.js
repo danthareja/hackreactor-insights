@@ -1,4 +1,4 @@
-// TODO: Make this middleware? Maybe on a timer? None of these functions need to interact with the client at all..
+//DEPRICATED. Only here for refrence. See githubMiddleware.js
 var Promise = require("bluebird");
 var http = require("request");
 var GitHubApi = require("github");

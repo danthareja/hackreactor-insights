@@ -1,4 +1,4 @@
-// TODO: Error handling
+// TODO: Error handling. res.send errors along the way of the middleware
 var Promise = require("bluebird");
 var http = require("request");
 var GitHubApi = require("github");
@@ -50,22 +50,13 @@ Promise.promisifyAll(github.repos.stats);
  * Helper functions 
  */
 
-// Authenticate user 
-var authenticate = function(user) {
-  github.authenticate({
-    type: "oauth",
-    token: user.token
-  });
-  console.log("authenticated user!");
-};
-
 // Save data to mongo
-// TODO: Think about what response to send
 var saveData = function(req, res, next) {
   req.user.save(function(err, user, numberAffected) {
     if (err) console.log("Error saving data to mongo", err);
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected");
+      // Go to next step
       next();
     }
   });
@@ -82,9 +73,7 @@ exports.getMembers = function(req, res, next) {
   var user = req.user;
   var pages = 2;
   user.orgMembers = [];
-  
-  authenticate(user);
-  getGithubMembers();
+    getGithubMembers();
 
   // Gets all the members in order to completion, then saves data
   function getGithubMembers(page) {
@@ -125,8 +114,6 @@ exports.getMemberRepos = function(req, res, next) {
   var completedMembers = 0;
   var repoCount = 0;
   
-  authenticate(user);
-
   // For each member, send a request to github for their repos
   members.forEach(function(member) {
     member.repos = []; // Reset repos
@@ -188,8 +175,6 @@ exports.getRepoStats = function(req, res, next) {
   var members = user.orgMembers;
   var completedRepos = 0;
   
-  authenticate(user);
-
   members.forEach(function(member) {
     // Skip over any member that has no recently updated repos
     member.repos.length > 0 && member.repos.forEach(function(repo) {
