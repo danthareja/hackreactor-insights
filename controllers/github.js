@@ -1,4 +1,4 @@
-// TODO: add contional headers for each API call (lookup If-Modified-Since header)
+// TODO: Make this middleware? Maybe on a timer? None of these functions need to interact with the client at all..
 var Promise = require("bluebird");
 var http = require("request");
 var GitHubApi = require("github");
@@ -135,7 +135,7 @@ exports.getMembers = function(req, res) {
 /**
  * GET /api/github/members/repos
  * Goes through each member in the authenticated user's orgMembers array and gets all repos associated with each member
- * Stores only repos update in the last week in user.orgMembers.[[member]].repos array in mongo
+ * Stores ONLY REPOS UPDATED IN THE LAST WEEK in user.orgMembers.[[member]].repos array in mongo. NOTE: Update does not mean a commit was made
  */
 
 // TODO: rethink ++completed requests
