@@ -4,7 +4,8 @@
   "description": "How much code does Hack Reactor actually push up?",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "postinstall": "bower install"
   },
   "author": "danthareja (danthareja@gmail.com)",
   "license": "MIT",
