@@ -19,6 +19,7 @@ var mongoose = require("mongoose");
  */
 
  var githubController = require('./controllers/github');
+ var githubMiddleware = require('./controllers/githubMiddleware');
  var mongoController = require('./controllers/mongo');
 
 /**
@@ -73,18 +74,21 @@ app.use(static(__dirname + "/public", "index.html")); // serve index, Angular ta
 app.get("/auth/github", passport.authenticate("github"));
 app.get("/auth/github/callback", passport.authenticate("github"), function(req, res) {
   // Successful authentication, redirect back to Angular
-  console.log("Successful github authentication!");
-  res.redirect("/");
+  console.log("Successful github authentication! Getting github data now..");
+  res.redirect("/api/github/all");
 });
 
 /**
  * GitHub API routes. Gets data from github and saves it to mongo.
  */
 
-app.get("/api/github/test", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.test);
-app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMembers);
-app.get("/api/github/members/repos", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMemberRepos);
-app.get("/api/github/members/repos/stats", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getRepoStats);
+// app.get("/api/github/test", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.test);
+// app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMembers);
+// app.get("/api/github/members/repos", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getMemberRepos);
+// app.get("/api/github/members/repos/stats", passportConf.isAuthenticated, passportConf.isAuthorized, githubController.getRepoStats);
+
+// Refactors github requests into middleware
+app.get("/api/github/all", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMembers, githubMiddleware.getMemberRepos, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
 
 /**
  * Mongo routes. Gets stored repo statistics and converts it to d3 friendly format.

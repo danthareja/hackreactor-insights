@@ -18,7 +18,7 @@ angular.module("hrStats")
   };
 
   // Github
-  this.test = get("/api/github/test");
+  this.test = get("/api/github/all");
   this.getMembers = get("/api/github/members");
   this.getMemberRepos = get("/api/github/members/repos");
   this.getRepoStats = get("/api/github/members/repos/stats");
