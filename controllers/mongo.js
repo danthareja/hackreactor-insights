@@ -26,14 +26,15 @@ exports.getCodeFrequency = function(req, res) {
   // Ignore any members with empty repos
   var filtered = req.user.orgMembers.filter(function(member) {
     return member.repos.length > 0;
-  })
+  });
 
   filtered.forEach(function(member) {
     member.repos.forEach(function(repo) {
       parseStats(repo.stats.codeFrequency).forEach(function(stat) {
+        console.log("repo: ", repo.name, "date: ", stat[0]);
         // codeFrequency stats come in tuples [date, additions, deletions]
         // We want to make sure there's at least some action!
-        if (stat[0] === 1414281600 && stat[1] > 0 && stat[2] < 0) {
+        if (isLastSunday(stat[0]) && stat[1] > 0 && stat[2] < 0) {
           console.log("found a repo:", repo.name, " from this week! it adds " , stat[1] , " lines and removes ", stat[2], " lines for a total of ", stat[1] + stat[2], " new lines ");
           // d3 friendly format (see above)
           stats.push({
@@ -42,14 +43,23 @@ exports.getCodeFrequency = function(req, res) {
             additions: stat[1],
             deletions: stat[2],
             net: stat[1] + stat[2]
-          })
+          });
         }
       });
     });
   });
 
   res.send(stats);
-}
+
+  // Date -> Bool
+  function isLastSunday(date) {
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var sunday = new Date(today.setDate(today.getDate()-today.getDay()-1));
+    return date === sunday.setHours(sunday.getHours()+17) / 1000;
+  }
+
+};
 
 
 /**

@@ -32,9 +32,9 @@ function getGithubStats(type) {
     };
     http(getOptions, function(err, stats) {
       // Callback with only data we're interested in
-      callback(err, stats.body)
+      callback(err, stats.body);
     });
-  }
+  };
 }
 
 /**

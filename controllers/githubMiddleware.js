@@ -31,9 +31,9 @@ function getGithubStats(type) {
     };
     http(getOptions, function(err, stats) {
       // Callback with only data we're interested in
-      callback(err, stats.body)
+      callback(err, stats.body);
     });
-  }
+  };
 }
 
 /**
@@ -49,6 +49,15 @@ Promise.promisifyAll(github.repos.stats);
 /**
  * Helper functions 
  */
+
+// Authenticate user 
+var authenticate = function(user) {
+ github.authenticate({
+   type: "oauth",
+   token: user.token
+ });
+ console.log("authenticated user!");
+};
 
 // Save data to mongo
 var saveData = function(req, res, next) {
@@ -73,7 +82,9 @@ exports.getMembers = function(req, res, next) {
   var user = req.user;
   var pages = 2;
   user.orgMembers = [];
-    getGithubMembers();
+
+  authenticate(user);
+  getGithubMembers();
 
   // Gets all the members in order to completion, then saves data
   function getGithubMembers(page) {
@@ -113,6 +124,8 @@ exports.getMemberRepos = function(req, res, next) {
   var members = user.orgMembers;
   var completedMembers = 0;
   var repoCount = 0;
+
+  authenticate(user);
   
   // For each member, send a request to github for their repos
   members.forEach(function(member) {
@@ -174,6 +187,8 @@ exports.getRepoStats = function(req, res, next) {
   var user = req.user;
   var members = user.orgMembers;
   var completedRepos = 0;
+
+  authenticate(user);
   
   members.forEach(function(member) {
     // Skip over any member that has no recently updated repos
@@ -215,5 +230,5 @@ exports.getRepoStats = function(req, res, next) {
 exports.sendResponse = function(req, res) {
   console.log("Got all github data! Woo!")
   res.send(200); // Maybe redirect to homepage
-}
+};
 
