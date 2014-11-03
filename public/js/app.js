@@ -1,4 +1,4 @@
-angular.module("hrStats", [])
+angular.module("hrStats", ["d3"])
 
 .controller("MainController", function($scope, GithubAPIService) {
   $scope.authenticate = GithubAPIService.authenticate;
