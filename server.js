@@ -84,8 +84,10 @@ app.get("/auth/github/callback", passport.authenticate("github"), function(req, 
  */
 
 // Refactors github requests into middleware. TODO: Error Handling
-app.get("/api/github/all", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMembers, githubMiddleware.getMemberRepos, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
+app.get("/api/github/members", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMembers, githubMiddleware.sendResponse);
+app.get("/api/github/repos", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMemberRepos, githubMiddleware.sendResponse);
 app.get("/api/github/stats", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
+app.get("/api/github/all", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMembers, githubMiddleware.getMemberRepos, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
 
 /**
  * Mongo routes. Gets stored repo statistics and converts it to d3 friendly format.
