@@ -229,6 +229,6 @@ exports.getRepoStats = function(req, res, next) {
 
 exports.sendResponse = function(req, res) {
   console.log("Got all github data! Woo!")
-  res.send(200); // Maybe redirect to homepage
+  res.send(req.user.profile); // Maybe redirect to homepage
 };
 

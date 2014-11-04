@@ -74,7 +74,7 @@ exports.getPunchCard = function(req, res) {
   // Ignore any members with empty repos
   var filtered = req.user.orgMembers.filter(function(member) {
     return member.repos.length > 0;
-  })
+  });
 
   filtered.forEach(function(member) {
     member.repos.forEach(function(repo) {

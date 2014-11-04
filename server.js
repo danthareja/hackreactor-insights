@@ -18,7 +18,6 @@ var mongoose = require("mongoose");
  * Controllers (route handlers).
  */
 
- var githubController = require('./controllers/github');
  var githubMiddleware = require('./controllers/githubMiddleware');
  var mongoController = require('./controllers/mongo');
 
@@ -77,7 +76,7 @@ app.get("/auth/github", passport.authenticate("github"));
 app.get("/auth/github/callback", passport.authenticate("github"), function(req, res) {
   // Successful authentication, redirect back to Angular
   console.log("Successful github authentication! Getting github data now..");
-  res.redirect("/");
+  res.redirect("/#/loading");
 });
 
 /**
@@ -86,7 +85,6 @@ app.get("/auth/github/callback", passport.authenticate("github"), function(req, 
 
 // Refactors github requests into middleware. TODO: Error Handling
 app.get("/api/github/all", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMembers, githubMiddleware.getMemberRepos, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
-app.get("/api/github/test", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getMembers, githubMiddleware.getMemberRepos, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
 app.get("/api/github/stats", passportConf.isAuthenticated, passportConf.isAuthorized, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
 
 /**
