@@ -41,6 +41,7 @@ angular.module("hrStats", ["ui.router", "d3"])
         }
     })
     // Home :: resolve stats -> visual
+    // TODO: Something something, default here if logged in
     .state("home", {
       url: "/",
       templateUrl: "partials/home.html",
@@ -62,7 +63,8 @@ angular.module("hrStats", ["ui.router", "d3"])
  * HomeController - handles all the pretty d3 visualization
  */
 
-.controller("HomeController", function($scope, $stateParams, punchCard, codeFrequency) {
+.controller("HomeController", function($scope, $stateParams, punchCard, codeFrequency, d3) {
+  console.log(d3);
   console.log("state params: ", $stateParams);
   console.log("punch: ", punchCard);
   console.log("codeFrequency: ", codeFrequency);
