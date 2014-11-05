@@ -64,7 +64,16 @@ angular.module("hrStats", ["ui.router", "d3"])
  */
 
 .controller("HomeController", function($scope, $stateParams, punchCard, codeFrequency) {
+  // Code Frequency
   $scope.codeFrequency = codeFrequency;
+  $scope.totalAdditions = codeFrequency.reduce(function(total, repo){
+    return repo.additions + total;
+  },0);
+  $scope.totalDeletions = codeFrequency.reduce(function(total, repo){
+    return repo.deletions + total;
+  },0);
+
+  // Punch Card
   $scope.punchCard = punchCard;
 
   console.log("-------- data inside home controller --------");

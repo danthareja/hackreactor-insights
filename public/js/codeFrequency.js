@@ -3,22 +3,18 @@
  */
 
 angular.module('hrStats')
-.directive('codeFrequency', ['d3', function(d3){
+.directive('codeFrequency', ['d3', '$document', function(d3, $document){
   var link = function(scope, element, attrs) {
     /**
      * Window setup
+     * TODO: Make responsive
      */
 
-    var margin = {
-        top: 20,
-        right: 20,
-        bottom: 30,
-        left: 60
-    };
-    // TODO: make these dynamic to screen size
-    var width = 700 - margin.left - margin.right;
-    var height = 100 - margin.top - margin.bottom;
+    // Window constraints
+    var width = $document[0].body.clientWidth;
+    var height = 50;
 
+    // Colors
     var white = '#EEEEEE';
     var blue = '#2874DC';
 
@@ -44,14 +40,13 @@ angular.module('hrStats')
                            .domain([0, totalDeletions])
                            .range([0, width]);
 
-    console.log("deletionsScale ", deletionScale(500));
-    
     /**
      * Scope.render -> straight up d3
      */
 
     scope.render = function(data) {
       console.log('data inside scope.render ', data);
+      
       /**
        * Additions
        */
@@ -74,31 +69,41 @@ angular.module('hrStats')
         })
         .style('fill', function(d,i) {
           return i % 2 === 0 ? white : blue;
+        })
+        .on('mouseover', function() {
+          console.log("mouseover");
+        })
+        .on('mouseout', function() {
+          console.log("mouseout");
         });
 
-        /**
-         * Deletions
-         */
-        
-        // Initialize
-        var deletionsSoFar = 0; // keeps track of where to put deletion data
-        var deletions = d3.select('#deletions').append('svg');
-        deletions.attr('width', width).attr('height', height);
 
-        deletions.selectAll('*')
-          .data(data).enter()
-          .append('svg:rect')
-          .attr('height', 50)
-          .attr('width', function(d,i) {
-            return deletionScale(d.deletions);
-          })
-          .attr('x', function(d,i) {
-            deletionsSoFar += d.deletions;
-            return deletionScale(deletionsSoFar - d.deletions);
-          })
-          .style('fill', function(d,i) {
-            return i % 2 === 0 ? white : blue;
-          });
+
+
+        // /**
+        //  * Deletions
+        //  */
+
+
+        // // Initialize
+        // var deletionsSoFar = 0; // keeps track of where to put deletion data
+        // var deletions = d3.select('#deletions').append('svg');
+        // deletions.attr('width', width).attr('height', height);
+
+        // deletions.selectAll('*')
+        //   .data(data).enter()
+        //   .append('svg:rect')
+        //   .attr('height', 50)
+        //   .attr('width', function(d,i) {
+        //     return deletionScale(d.deletions);
+        //   })
+        //   .attr('x', function(d,i) {
+        //     deletionsSoFar += d.deletions;
+        //     return deletionScale(deletionsSoFar - d.deletions);
+        //   })
+        //   .style('fill', function(d,i) {
+        //     return i % 2 === 0 ? white : blue;
+        //   });
     };
 
     scope.render(scope.data);
