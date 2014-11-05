@@ -41,12 +41,17 @@ exports.getCodeFrequency = function(req, res) {
             username: member.username,
             repo: repo.name,
             additions: stat[1],
-            deletions: stat[2],
+            deletions: -stat[2], // Convert negative to positive
             net: stat[1] + stat[2]
           });
         }
       });
     });
+  });
+
+  // sorts stats in descending order by number of additions
+  stats = stats.sort(function(a,b) {
+    return b.additions - a.additions;
   });
 
   res.send(stats);

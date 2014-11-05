@@ -36,7 +36,7 @@ angular.module("hrStats", ["ui.router", "d3"])
       controller: function($state, $http) {
         $http.get("/api/github/stats") // ->>> Make sure to change this to /all <<<-
           .then(function(profile) {
-            $state.go("home", profile.data);
+            $state.go("home", profile.data); //TODO: Get this working, it's not passing right 
           });
         }
     })
@@ -60,12 +60,17 @@ angular.module("hrStats", ["ui.router", "d3"])
 })
 
 /**
- * HomeController - handles all the pretty d3 visualization
+ * controller: HomeController - does practically nothing
  */
 
-.controller("HomeController", function($scope, $stateParams, punchCard, codeFrequency, d3) {
-  console.log(d3);
+.controller("HomeController", function($scope, $stateParams, punchCard, codeFrequency) {
+  $scope.codeFrequency = codeFrequency;
+  $scope.punchCard = punchCard;
+
+  console.log("-------- data inside home controller --------");
   console.log("state params: ", $stateParams);
   console.log("punch: ", punchCard);
   console.log("codeFrequency: ", codeFrequency);
+  console.log("-------- END data inside home controller --------");
 });
+
