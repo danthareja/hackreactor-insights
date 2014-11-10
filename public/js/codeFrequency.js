@@ -71,10 +71,12 @@ angular.module('hrStats')
           return i % 2 === 0 ? white : blue;
         })
         .on('mouseover', function() {
-          console.log("mouseover");
+          var currentRepo = d3.select(this);
+          console.log("mouseing over ", this);
         })
         .on('mouseout', function() {
-          console.log("mouseout");
+          var currentRepo = d3.select(this);
+          console.log("mouseing out of : ", this);
         });
 
 
