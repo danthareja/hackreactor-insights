@@ -1,4 +1,4 @@
-angular.module("hrStats", ["ui.router", "d3"])
+angular.module("hrStats", ["ui.router", "d3", "ngMaterial"])
 
 /**
  * ===== Client side breakdown =====

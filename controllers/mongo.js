@@ -34,7 +34,7 @@ exports.getCodeFrequency = function(req, res) {
         console.log("repo: ", repo.name, "date: ", stat[0]);
         // codeFrequency stats come in tuples [date, additions, deletions]
         // We want to make sure there's at least some action!
-        if (isLastSunday(stat[0]) && stat[1] > 0 && stat[2] < 0) {
+        if (isLastSaturday(stat[0]) && stat[1] > 0 && stat[2] < 0) {
           console.log("found a repo:", repo.name, " from this week! it adds " , stat[1] , " lines and removes ", stat[2], " lines for a total of ", stat[1] + stat[2], " new lines ");
           // d3 friendly format (see above)
           stats.push({
@@ -56,12 +56,12 @@ exports.getCodeFrequency = function(req, res) {
 
   res.send(stats);
 
-  // Date -> Bool
-  function isLastSunday(date) {
+  // Date -> Bool ****THIS NEEDS TO BE FIXED. github is weird with the times it passes into codeFreq. Figure this out****
+  function isLastSaturday(date) {
     var now = new Date();
     var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    var sunday = new Date(today.setDate(today.getDate()-today.getDay()-1));
-    return date === sunday.setHours(sunday.getHours()+17) / 1000;
+    var saturday = new Date(today.setDate(today.getDate()-today.getDay()-1));
+    return date === saturday.setHours(saturday.getHours()+16) / 1000;
   }
 
 };
