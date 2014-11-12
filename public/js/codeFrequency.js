@@ -3,63 +3,58 @@
  */
 
 angular.module('hrStats')
-.directive('codeFrequency', ['d3', '$document', function(d3, $document){
+.directive('codeFrequency', ['d3', '$window', function(d3, $window){
   var link = function(scope, element, attrs) {
-    /**
-     * Window setup
-     * TODO: Make responsive
-     */
+    var svg = d3.select(element[0])
+      .append('svg')
+      .style('width', '100%');
 
-    // Window constraints
-    var width = $document[0].body.clientWidth;
-    var height = 50;
+    // Browser onresize event
+    window.onresize = function() {
+      scope.$apply();
+    };
+
+    // Watch for resize event
+    scope.$watch(function(){
+      return angular.element($window)[0].innerWidth * angular.element($window)[0].innerHeight;
+    }, function(){
+      scope.render(scope.data);
+    });
 
     // Colors
     var white = '#EEEEEE';
     var blue = '#2874DC';
 
     /**
-     * Scale
-     */
-
-    var totalAdditions = scope.data.reduce(function(total, repo){
-      return repo.additions + total;
-    }, 0);
-
-    var totalDeletions = scope.data.reduce(function(total, repo){
-      return repo.deletions + total;
-    }, 0);
-
-    // Additions scale :: repo.additions -> svg width
-    var additionScale = d3.scale.linear()
-                           .domain([0, totalAdditions])
-                           .range([0, width]);
-
-    // Deletions scale :: repo.deletions -> svg width
-    var deletionScale = d3.scale.linear()
-                           .domain([0, totalDeletions])
-                           .range([0, width]);
-
-    /**
      * Scope.render -> straight up d3
      */
 
     scope.render = function(data) {
-      console.log('data inside scope.render ', data);
-      
-      /**
-       * Additions
-       */
-      
-      // Initialize
-      var additionsSoFar = 0; // keeps track of where to put additions data
-      var additions = d3.select('#additions').append('svg');
-      additions.attr('width', width).attr('height', height);
+      // Remove all previous items before render
+      svg.selectAll('*').remove();
 
-      additions.selectAll('*')
+      // If we don't pass any data, return out of the element
+      if (!data) return;
+      // Size setup
+      var width = element[0].parentElement.offsetWidth;
+      var height = 75;
+      
+      var totalAdditions = scope.data.reduce(function(total, repo){
+        return repo.additions + total;
+      }, 0);
+
+      // Scale :: repo.additions -> svg width
+      var scale = d3.scale.linear()
+                             .domain([0, totalAdditions])
+                             .range([0, width]);
+
+      var additionsSoFar = 0; // keeps track of where to put additions data
+
+      svg.attr('width', width).attr('height', height);
+      svg.selectAll('rect')
         .data(data).enter()
-        .append('svg:rect')
-        .attr('height', 50)
+        .append('rect')
+        .attr('height', height)
         .attr('width', function(d,i) {
           return additionScale(d.additions);
         })
@@ -78,37 +73,7 @@ angular.module('hrStats')
           var currentRepo = d3.select(this);
           console.log("mouseing out of : ", this);
         });
-
-
-
-
-        // /**
-        //  * Deletions
-        //  */
-
-
-        // // Initialize
-        // var deletionsSoFar = 0; // keeps track of where to put deletion data
-        // var deletions = d3.select('#deletions').append('svg');
-        // deletions.attr('width', width).attr('height', height);
-
-        // deletions.selectAll('*')
-        //   .data(data).enter()
-        //   .append('svg:rect')
-        //   .attr('height', 50)
-        //   .attr('width', function(d,i) {
-        //     return deletionScale(d.deletions);
-        //   })
-        //   .attr('x', function(d,i) {
-        //     deletionsSoFar += d.deletions;
-        //     return deletionScale(deletionsSoFar - d.deletions);
-        //   })
-        //   .style('fill', function(d,i) {
-        //     return i % 2 === 0 ? white : blue;
-        //   });
     };
-
-    scope.render(scope.data);
   };
 
   return {
