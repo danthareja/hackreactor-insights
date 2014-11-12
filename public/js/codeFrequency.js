@@ -35,6 +35,7 @@ angular.module('hrStats')
 
       // If we don't pass any data, return out of the element
       if (!data) return;
+      
       // Size setup
       var width = element[0].parentElement.offsetWidth;
       var height = 75;
@@ -43,12 +44,12 @@ angular.module('hrStats')
         return repo.additions + total;
       }, 0);
 
-      // Scale :: repo.additions -> svg width
-      var scale = d3.scale.linear()
+      // xScale :: repo.additions -> svg width
+      var xScale = d3.scale.linear()
                              .domain([0, totalAdditions])
                              .range([0, width]);
 
-      var additionsSoFar = 0; // keeps track of where to put additions data
+      var additionsSoFar = 0; // keeps track of where to put each rectangle
 
       svg.attr('width', width).attr('height', height);
       svg.selectAll('rect')
@@ -56,22 +57,22 @@ angular.module('hrStats')
         .append('rect')
         .attr('height', height)
         .attr('width', function(d,i) {
-          return additionScale(d.additions);
+          return xScale(d.additions);
         })
         .attr('x', function(d,i) {
           additionsSoFar += d.additions;
-          return additionScale(additionsSoFar - d.additions);
+          return xScale(additionsSoFar - d.additions);
         })
         .style('fill', function(d,i) {
           return i % 2 === 0 ? white : blue;
         })
         .on('mouseover', function() {
           var currentRepo = d3.select(this);
-          console.log("mouseing over ", this);
+          // console.log("mouseing over ", this);
         })
         .on('mouseout', function() {
           var currentRepo = d3.select(this);
-          console.log("mouseing out of : ", this);
+          // console.log("mouseing out of : ", this);
         });
     };
   };
