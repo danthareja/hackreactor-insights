@@ -1,9 +1,18 @@
-.fa-10x {
-  font-size: 10em;
-}
 .green {
   color: rgb(61, 223, 61);
 }
 .red {
   color: red;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
 }

@@ -56,8 +56,8 @@ angular.module('hrStats')
 
       // xScale :: repo.additions -> svg width
       var xScale = d3.scale.linear()
-                            .domain([0, totalAdditions])
-                            .range([0, width]);
+                     .domain([0, totalAdditions])
+                     .range([0, width]);
 
       var additionsSoFar = 0; // keeps track of where to put each rectangle
 
