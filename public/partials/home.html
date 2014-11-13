@@ -1,9 +1,19 @@
-<md-card>
-  <h3>So far <span style="color:rgb(61, 223, 61)">{{totalAdditions}}</span> lines have been added and <span style="color:red">{{totalDeletions}}</span> have been deleted for a net total of <span style="color:rgb(61, 223, 61)">{{totalAdditions-totalDeletions}}</span> of new lines written</h3>
+<md-card layout="vertical" layout-align="center center">
+  <h3>So far <span class="green">{{totalAdditions}}</span> lines have been added and <span class="red">{{totalDeletions}}</span> have been deleted for a net total of <span class="green">{{totalAdditions-totalDeletions}}</span> of new lines written</h3>
 </md-card>
+
 <md-card>
+  <div id="codeFrequency" layout="horizontal">
+    <h2>Code Frequency</h2>
+    <div flex></div>
+  </div>
   <code-frequency data="codeFrequency"></code-frequency>
 </md-card>
+
 <md-card>
+  <div id="punchCard" layout="horizontal">
+    <h2>Punch Card</h2>
+    <div flex></div>
+  </div>
   <punch-card data="punchCard"></punch-card>
 </md-card>

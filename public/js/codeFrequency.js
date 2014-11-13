@@ -5,15 +5,19 @@
 angular.module('hrStats')
 .directive('codeFrequency', ['d3', '$window', function(d3, $window){
   var link = function(scope, element, attrs) {
-    // Main visual
+    // Main svg
     var svg = d3.select(element[0])
       .append('svg')
       .style('width', '100%');
 
     // Tooltip
-    var tooltip = d3.select("#stats").insert("md-whiteframe")
-      .attr("class", "md-whiteframe-z1 tooltip")
+    var tooltip = d3.select("#codeFrequency").insert("md-whiteframe")
+      .attr("class", "md-whiteframe-z1")
       .style("opacity", 0)
+      .style("text-align", "center")
+      .style("width", "275px")
+      .style("height", "50px")
+      .style("padding", "5px");
 
     // Browser onresize event
     window.onresize = function() {
@@ -28,7 +32,7 @@ angular.module('hrStats')
     });
 
     // Colors
-    var white = '#EEEEEE';
+    var white = '#DDDDDD';
     var blue = '#03a9f4';
 
     /**
@@ -72,17 +76,28 @@ angular.module('hrStats')
         .style('fill', function(d,i) {
           return i % 2 === 0 ? white : blue;
         })
+        .style('opacity', 0.75)
         .on('mouseover', function(d) {
           console.log("mouseing over ", d);
+          // Highlight bar
+          d3.select(this).style("opacity", 1);
+
+          // Add tooltip text
           tooltip.html(
-            '<div><span class="tooltipTitle">' + d.username + '/' + d.repo + '\n</span></div>' +
+            '<div><span>' + d.username + '/' + d.repo + '\n</span></div>' +
             '<div><span class="green">+' + d.additions + '</span>/<span class="red"> -' + d.deletions + '</span></div>'
           );
+
+          // Fade in tooltip
           tooltip.transition()
             .duration(200)
             .style("opacity", 0.9);
         })
         .on('mouseout', function() {
+          // Remove highlight
+          d3.select(this).style("opacity", 0.75);
+
+          // Remove tooltip
           tooltip.transition()
             .duration(300)
             .style("opacity", 0);
