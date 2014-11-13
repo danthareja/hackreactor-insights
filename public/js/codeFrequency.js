@@ -5,9 +5,15 @@
 angular.module('hrStats')
 .directive('codeFrequency', ['d3', '$window', function(d3, $window){
   var link = function(scope, element, attrs) {
+    // Main visual
     var svg = d3.select(element[0])
       .append('svg')
       .style('width', '100%');
+
+    // Tooltip
+    var tooltip = d3.select("#stats").insert("md-whiteframe")
+      .attr("class", "md-whiteframe-z1 tooltip")
+      .style("opacity", 0)
 
     // Browser onresize event
     window.onresize = function() {
@@ -23,7 +29,7 @@ angular.module('hrStats')
 
     // Colors
     var white = '#EEEEEE';
-    var blue = '#2874DC';
+    var blue = '#03a9f4';
 
     /**
      * Scope.render -> straight up d3
@@ -46,8 +52,8 @@ angular.module('hrStats')
 
       // xScale :: repo.additions -> svg width
       var xScale = d3.scale.linear()
-                             .domain([0, totalAdditions])
-                             .range([0, width]);
+                            .domain([0, totalAdditions])
+                            .range([0, width]);
 
       var additionsSoFar = 0; // keeps track of where to put each rectangle
 
@@ -66,13 +72,20 @@ angular.module('hrStats')
         .style('fill', function(d,i) {
           return i % 2 === 0 ? white : blue;
         })
-        .on('mouseover', function() {
-          var currentRepo = d3.select(this);
-          // console.log("mouseing over ", this);
+        .on('mouseover', function(d) {
+          console.log("mouseing over ", d);
+          tooltip.html(
+            '<div><span class="tooltipTitle">' + d.username + '/' + d.repo + '\n</span></div>' +
+            '<div><span class="green">+' + d.additions + '</span>/<span class="red"> -' + d.deletions + '</span></div>'
+          );
+          tooltip.transition()
+            .duration(200)
+            .style("opacity", 0.9);
         })
         .on('mouseout', function() {
-          var currentRepo = d3.select(this);
-          // console.log("mouseing out of : ", this);
+          tooltip.transition()
+            .duration(300)
+            .style("opacity", 0);
         });
     };
   };
