@@ -197,7 +197,7 @@ exports.getRepoStats = function(req, res, next) {
         username: member.username,
         repo: repo.name,
         token: user.token
-      }
+      };
 
       // Get codeFrequency stats
       github.repos.stats.codeFrequencyAsync(options)

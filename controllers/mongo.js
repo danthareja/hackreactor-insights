@@ -84,7 +84,6 @@ exports.getPunchCard = function(req, res) {
   filtered.forEach(function(member) {
     member.repos.forEach(function(repo) {
       parseStats(repo.stats.punchCard).forEach(function(stat, i) {
-        stats[i].repos = [];
         // punchCard stats come in tuples [day, hour, number of commits]
         // For example, [2, 14, 25] indicates that there were 25 total commits, during the 2:00pm hour on Tuesdays. All times are based on the time zone of individual commits.
         // We want to make sure there's at least some action!
