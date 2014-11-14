@@ -34,10 +34,10 @@ angular.module("hrStats", ["ui.router", "d3", "ngMaterial"])
       url: "/loading",
       templateUrl: "partials/loading.html",
       controller: function($state, $http) {
-        $http.get("/api/github/all") //CHANGETHIS back to all!!
-          .then(function(profile) {
-            $state.go("home", profile.data); //TODO: Get this working, it's not passing right 
-          });
+        // $http.get("/api/github/all")
+        //   .then(function(profile) {
+        //     $state.go("home", profile.data); //TODO: Get this working, it's not passing right 
+        //   });
         }
     })
     // Home :: resolve stats -> visual
