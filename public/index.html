@@ -10,6 +10,7 @@
 
     <script src="js/d3Factory.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/HomeController.js"></script>
     <script src="js/codeFrequency.js"></script>
     <script src="js/punchCard.js"></script>
 
@@ -23,17 +24,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Hack Reactor Stats</title>
   </head>
-  <body ng-app="hrStats">
+  <body ng-app="hrStats" ng-controller="AppController">
     <md-toolbar>
       <h2 class="md-toolbar-tools md-whiteframe-z1">
-        <img style="width: 45px; height: 45px;" src="images/logo.png"></img>
         <span flex>This week at Hack Reactor</span>
-        <md-button class="md-primary md-raised" md-theme="pink" aria-label="Help">
+        <md-button class="md-primary md-raised" md-theme="pink" ng-click="help($event)"  aria-label="Help">
             <i class="fa fa-question-circle"></i>
         </md-button>
       </h2>
     </md-toolbar>
     <ui-view>
-    <footer>HOADFIASHDFASDKFA</footer>
   </body>
 </html>
