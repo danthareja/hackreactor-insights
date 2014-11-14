@@ -35,11 +35,11 @@
   </md-card>
   <md-card layout="vertical" layout-align="center center">
     <h3><span class="blue">{{numberToDay(mostProductiveHour.day)}}</span> at <span class="blue">{{numberToHour(mostProductiveHour.hour)}}</span> was the single <i>most productive hour</i> all week with a total of <span class=
-      "green">{{mostProductiveHour.commits}}</span> commit(s) made to <span class="blue">{{mostProductiveHour.repos.length}}</span> repos</h3>
+      "green">{{mostProductiveHour.commits}}</span> commits made to <span class="blue">{{mostProductiveHour.repos.length}}</span> repos</h3>
   </md-card>
   <md-card layout="vertical" layout-align="center center">
     <h3><span class="blue">{{numberToDay(leastProductiveHour.day)}}</span> at <span class="blue">{{numberToHour(leastProductiveHour.hour)}}</span> was the single <i>least productive hour</i> all week with a total of <span class=
-      "green">{{leastProductiveHour.commits}}</span> commit(s) made to <span class="blue">{{leastProductiveHour.repos.length}}</span> repos</h3>
+      "red">{{leastProductiveHour.commits}}</span> commits made to <span class="blue">{{leastProductiveHour.repos.length}}</span> repos</h3>
   </md-card>
   <md-card layout="vertical" layout-align="center center">
     <h3><span class="blue">{{mostProductiveDay.day}}</span> was the <i>most productive day</i> all week with a total of <span class=

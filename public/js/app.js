@@ -119,9 +119,6 @@ angular.module("hrStats", ["ui.router", "d3", "ngMaterial"])
   $scope.mostDeletions = getMost('deletions', codeFrequency);
   $scope.mostNetLines = getMost('net', codeFrequency);
 
-  $scope.mostProductiveHour = getMost('commits', punchCard);
-  $scope.leastProductiveHour = getLeast('commits', punchCard);
-
   // Put in proper format so we can use the same helper function
   var commitsPerDay = punchCard.reduce(function(result, punchCard) {
     var dayNum = punchCard.day;
@@ -144,5 +141,8 @@ angular.module("hrStats", ["ui.router", "d3", "ngMaterial"])
 
   $scope.mostProductiveDay = getMost('commits', commitsPerDay);
   $scope.leastProductiveDay = getLeast('commits', commitsPerDay);
+
+  $scope.mostProductiveHour = getMost('commits', punchCard);
+  $scope.leastProductiveHour = getLeast('commits', punchCard);
 });
 
