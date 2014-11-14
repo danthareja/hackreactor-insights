@@ -1,19 +1,52 @@
-<md-card layout="vertical" layout-align="center center">
-  <h3>So far <span class="green">{{totalAdditions}}</span> lines have been added and <span class="red">{{totalDeletions}}</span> have been deleted for a net total of <span class="green">{{totalAdditions-totalDeletions}}</span> of new lines written</h3>
+<md-card>
+  <h1>Code Frequency</h1>
+  <md-card>
+    <div id="codeFrequency" layout="horizontal">
+      <h2>Additions and Deletions</h2>
+      <div flex></div>
+    </div>
+    <code-frequency data="codeFrequency"></code-frequency>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3>So far <span class="green">{{totalAdditions}}</span> lines have been added and <span class="red">{{totalDeletions}}</span> have been deleted for a net total of <span class="green">{{totalAdditions-totalDeletions}}</span> of new lines written</h3>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3><span class="blue">{{mostAdditions.username}}</span> has the <i>most additions</i> on a single repo this week with a total of <span class=
+      "green">{{mostAdditions.additions}}</span> additions on the repo <span class="blue">{{mostAdditions.repo}}</span></h3>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3><span class="blue">{{mostDeletions.username}}</span> has the <i>most deletions</i> on a single repo this week with a total of <span class=
+      "red">{{mostDeletions.deletions}}</span> deletions on the repo <span class="blue">{{mostDeletions.repo}}</span></h3>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3><span class="blue">{{mostNetLines.username}}</span> has the <i>most net lines</i> written on a single repo this week with a total of <span class=
+      "green">{{mostNetLines.net}}</span> net additions on the repo <span class="blue">{{mostNetLines.repo}}</span></h3>
+  </md-card>
 </md-card>
 
 <md-card>
-  <div id="codeFrequency" layout="horizontal">
-    <h2>Additions and deletions</h2>
-    <div flex></div>
-  </div>
-  <code-frequency data="codeFrequency"></code-frequency>
-</md-card>
-
-<md-card>
-  <div id="punchCard" layout="horizontal">
-    <h2>Commits over time</h2>
-    <div flex></div>
-  </div>
-  <punch-card data="punchCard"></punch-card>
+  <h1>Punch Card</h1>
+  <md-card>
+    <div id="punchCard" layout="horizontal">
+      <h2>Commits over time</h2>
+      <div flex></div>
+    </div>
+    <punch-card data="punchCard"></punch-card>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3><span class="blue">{{numberToDay(mostProductiveHour.day)}}</span> at <span class="blue">{{numberToHour(mostProductiveHour.hour)}}</span> was the single <i>most productive hour</i> all week with a total of <span class=
+      "green">{{mostProductiveHour.commits}}</span> commit(s) made to <span class="blue">{{mostProductiveHour.repos.length}}</span> repos</h3>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3><span class="blue">{{numberToDay(leastProductiveHour.day)}}</span> at <span class="blue">{{numberToHour(leastProductiveHour.hour)}}</span> was the single <i>least productive hour</i> all week with a total of <span class=
+      "green">{{leastProductiveHour.commits}}</span> commit(s) made to <span class="blue">{{leastProductiveHour.repos.length}}</span> repos</h3>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3><span class="blue">{{mostProductiveDay.day}}</span> was the <i>most productive day</i> all week with a total of <span class=
+      "green">{{mostProductiveDay.commits}}</span> commits made to <span class="blue">{{mostProductiveDay.repoCount}}</span> repos</h3>
+  </md-card>
+  <md-card layout="vertical" layout-align="center center">
+    <h3><span class="blue">{{leastProductiveDay.day}}</span> was the <i>least productive day</i> all week with a total of <span class=
+      "red">{{leastProductiveDay.commits}}</span> commits made to <span class="blue">{{leastProductiveDay.repoCount}}</span> repos</h3>
+  </md-card>
 </md-card>

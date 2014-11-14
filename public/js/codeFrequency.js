@@ -48,7 +48,7 @@ angular.module('hrStats')
       
       // Size setup
       var width = element[0].parentElement.offsetWidth;
-      var height = 75;
+      var height = 100;
       
       var totalAdditions = scope.data.reduce(function(total, repo){
         return repo.additions + total;
@@ -84,7 +84,7 @@ angular.module('hrStats')
 
           // Add tooltip text
           tooltip.html(
-            '<div><span>' + d.username + '/' + d.repo + '\n</span></div>' +
+            '<div><span>' + d.username + '/' + d.repo + '</span></div>' +
             '<div><span class="green">+' + d.additions + '</span>/<span class="red"> -' + d.deletions + '</span></div>'
           );
 

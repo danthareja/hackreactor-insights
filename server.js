@@ -102,7 +102,7 @@ app.get("/api/stats/punch_card", passportConf.isAuthenticated, passportConf.isAu
  */
 
 app.get("*", function(req, res) {
-  res.status(404).sendFile(__dirname + "/404.html");
+  res.send(404);
 });
 
 /**

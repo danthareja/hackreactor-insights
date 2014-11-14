@@ -12,11 +12,11 @@ angular.module('hrStats')
 
     // Tooltip
     var tooltip = d3.select("#punchCard").insert("md-whiteframe")
-      .attr("class", "md-whiteframe-z1 tooltip")
+      .attr("class", "md-whiteframe-z1")
       .style("opacity", 0)
       .style("text-align", "center")
-      .style("width", "150px")
-      .style("height", "50px")
+      .style("width", "175px")
+      .style("height", "70px")
       .style("padding", "5px");
 
     // Browser onresize event
@@ -37,10 +37,10 @@ angular.module('hrStats')
 
     // Scale blue darkness based on number of commits
     var blueScale = d3.scale.linear()
-                            .domain([0, d3.max(scope.data, function(d) {
-                               return d.commits;
-                             })])
-                            .range([white, blue]);
+                      .domain([0, d3.max(scope.data, function(d) {
+                         return d.commits;
+                       })])
+                      .range([white, blue]);
 
     /**
      * Scope.render -> straight up d3
@@ -58,12 +58,12 @@ angular.module('hrStats')
       var height = 400;
       var xPadding = 0;
 
-      // xScale :: repo.additions -> svg width
+      // yScale :: repo.commits -> rect height
       var yScale = d3.scale.linear()
-                           .domain([0, d3.max(data, function(d) {
-                              return d.commits;
-                            })])
-                           .range([0, height]);
+                     .domain([0, d3.max(data, function(d) {
+                        return d.commits;
+                      })])
+                     .range([0, height]);
 
       svg.attr('width', width).attr('height', height);
       svg.selectAll('rect')
@@ -91,8 +91,9 @@ angular.module('hrStats')
 
           // Add tooltip text
           tooltip.html(
-            '<div><span class="tooltipTitle">' + d.commits + ' commits</span></div>' +
-            '<div><span>over ' + d.repos.length + ' repos</span></div>'
+            '<div><span>' + numberToDay(d.day) + ' @ ' + numberToHour(d.hour) + '</span></div>' +
+            '<div><span>' + d.commits + ' commits to</span></div>' +
+            '<div><span>' + d.repos.length + ' repos</span></div>'
           );
 
           // Fade in tooltip
@@ -111,6 +112,26 @@ angular.module('hrStats')
             .duration(300)
             .style("opacity", 0);
         });
+
+      // Helper methods
+      function numberToDay(num){
+        var days = {
+          0 : 'Sunday',
+          1 : 'Monday',
+          2 : 'Tuesday',
+          3 : 'Wednesday',
+          4 : 'Thursday',
+          5 : 'Friday',
+          6 : 'Saturday'
+        };
+        return days[num];
+      }
+
+      function numberToHour(num) {
+        if (num === 0) return '12am';
+        if (num === 12) return '12pm';
+        return num > 12 ? num - 12 + "pm" : num + "am";
+      }
     };
   };
 
