@@ -6,6 +6,8 @@ var User = require("../models/User"); // Maybe eventually use this model to find
 
 // Parses stringified stats and makes dates usable by javascript
 var parseStats = function(statString) {
+  // Every so often, GitHub gives us an undefined, just return out with an empty array
+  if (!statString) return [];
   // If there's nothing there, we'll just assign it to an empty array
   var stats = JSON.parse(statString.length > 0 ? statString : "[]");
 
