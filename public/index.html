@@ -27,8 +27,12 @@
   <body ng-app="hrStats" ng-controller="AppController">
     <md-toolbar>
       <h2 class="md-toolbar-tools md-whiteframe-z1">
-        <span flex>This week at Hack Reactor</span>
+        <a ui-sref="home">This week at Hack Reactor</a>
+        <span flex></span>
         <md-button class="md-primary md-raised" md-theme="pink" ng-click="help($event)"  aria-label="Help">
+            <md-tooltip>
+              Help
+            </md-tooltip>
             <i class="fa fa-question-circle"></i>
         </md-button>
       </h2>

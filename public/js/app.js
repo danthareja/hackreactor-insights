@@ -34,8 +34,9 @@ angular.module("hrStats", ["ui.router", "d3", "ngMaterial"])
       url: "/loading",
       templateUrl: "partials/loading.html",
       controller: function($state, $http) {
-        $http.get("/api/github/all")
+        $http.get("/api/github/all") // This should be 'all' in production
           .then(function(profile) {
+            console.log("Going to home state profile.data: ", profile.data);
             $state.go("home", profile.data); //TODO: Get this working, it's not passing right 
           });
         }
@@ -65,7 +66,6 @@ angular.module("hrStats", ["ui.router", "d3", "ngMaterial"])
 
 .controller("AppController", function($scope, $mdDialog){
   $scope.help = function(event) {
-    console.log('help clicked');
     $mdDialog.show({
       templateUrl: 'partials/faq.html',
       targetEvent: event,
