@@ -1,5 +1,3 @@
-var User = require("../models/User"); // Maybe eventually use this model to find all users orgMembers. Right now it only pulls from authenticated user
-
 /**
  * Helper functions 
  */
@@ -26,7 +24,7 @@ exports.getCodeFrequency = function(req, res) {
   var stats = [];
 
   // Ignore any members with empty repos
-  var filtered = req.user.orgMembers.filter(function(member) {
+  var filtered = req.org.members.filter(function(member) {
     return member.repos.length > 0;
   });
 
@@ -71,7 +69,7 @@ exports.getCodeFrequency = function(req, res) {
 
 /**
  * GET /api/stats/punch_card
- * Formats authorized users' orgMembers array into punch card dataset usable by d3
+ * Formats authorized users' members array into punch card dataset usable by d3
  * Format for d3 -> [{day, hour, commits, repos}, ...]
  */
  
@@ -79,7 +77,7 @@ exports.getPunchCard = function(req, res) {
   var stats = initializeStats();
 
   // Ignore any members with empty repos
-  var filtered = req.user.orgMembers.filter(function(member) {
+  var filtered = req.org.members.filter(function(member) {
     return member.repos.length > 0;
   });
 

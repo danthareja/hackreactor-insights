@@ -1,7 +1,9 @@
 // TODO: Error handling. res.send errors along the way of the middleware
-var Promise = require("bluebird");
 var http = require("request");
+var Promise = require("bluebird");
 var GitHubApi = require("github");
+var Organization = require("../models/Organization");
+var secret = require("../config/secret");
 
 /**
  * Instantiate API
@@ -51,17 +53,17 @@ Promise.promisifyAll(github.repos.stats);
  */
 
 // Authenticate user 
-var authenticate = function(user) {
+var authenticate = function() {
  github.authenticate({
    type: "oauth",
-   token: user.token
+   token: secret.githubToken
  });
  console.log("authenticated user!");
 };
 
 // Save data to mongo
 var saveData = function(req, res, next) {
-  req.user.save(function(err, user, numberAffected) {
+  req.org.save(function(err, user, numberAffected) {
     if (err) console.log("Error saving data to mongo", err);
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected");
@@ -72,18 +74,62 @@ var saveData = function(req, res, next) {
 };
 
 /**
+ * ======= STEP 0 ========
+ *
+ * Makes an initial call to GitHub with the organization we want to lookup.
+ * Creates a new entry in mongo if that organization does not exist yet.
+ */
+
+exports.getOrganization = function(req, res, next) {
+  org = req.query.org || 'hackreactor'; // Allow users to send custom org over query string
+  console.log('getting organization data for ', org);
+
+  authenticate();
+
+  github.orgs.getAsync({ org: org, per_page: 100})
+  .then(function(org) {
+    // Check to see if organization already exists in our db and create a new one if not
+    Organization.findOne({ login: org.login }, (function(err, existingOrg) {
+      if (existingOrg) {
+        req.org = existingOrg; // Pass on reference to the existing org
+        next();
+      } else {
+        var newOrg = new Organization();
+        newOrg.login = org.login;
+        newOrg.profile.name = org.name;
+        newOrg.profile.url = org.html_url;
+        newOrg.profile.avatar = org.avatar_url;
+        newOrg.profile.location = org.location;
+        newOrg.profile.email = org.email;
+        newOrg.profile.public_repos = org.public_repos;
+        newOrg.profile.public_gists = org.public_gists;
+        newOrg.profile.followers = org.followers;
+        newOrg.profile.following = org.following;
+        newOrg.profile.created_at = org.created_at;
+        newOrg.profile.updated_at = org.updated_at;
+        newOrg.save(function(err) {
+          console.log("saving new org", newOrg.name);
+          req.org = newOrg; // Pass on reference to the new org
+          next();
+        });
+      }
+    }));
+  });
+};
+
+/**
  * ======= STEP 1 ========
  *
  * Gets both hidden and public memberships in Hack Reactor for currently authenticated user.
- * Stores all members in user.orgMembers array in Mongo
+ * Stores all members in user.members array in Mongo
  */
 
 exports.getMembers = function(req, res, next) {
-  var user = req.user;
+  var org = req.org;
   var pages = 2;
-  user.orgMembers = [];
+  org.members = [];
 
-  authenticate(user);
+  authenticate();
   getGithubMembers();
 
   // Gets all the members in order to completion, then saves data
@@ -98,7 +144,7 @@ exports.getMembers = function(req, res, next) {
       .then(function(members) {
         members.forEach(function(member) {
           console.log("adding ", member.login);
-          user.orgMembers.push({
+          org.members.push({
             username: member.login,
             repos: []
           });
@@ -114,18 +160,18 @@ exports.getMembers = function(req, res, next) {
 /**
  * ======= STEP 2 ========
  *
- * Goes through each member in the authenticated user's orgMembers array and gets all repos associated with each member
- * Stores ONLY REPOS UPDATED IN THE LAST WEEK in user.orgMembers.[[member]].repos array in mongo. NOTE: Update does not mean a commit was made
+ * Goes through each member in the authenticated user's members array and gets all repos associated with each member
+ * Stores ONLY REPOS UPDATED IN THE LAST WEEK in user.members.[[member]].repos array in mongo. NOTE: Update does not mean a commit was made
  */
 
 // TODO: rethink ++completed requests
 exports.getMemberRepos = function(req, res, next) {
-  var user = req.user;
-  var members = user.orgMembers;
+  var org = req.org;
+  var members = org.members;
   var completedMembers = 0;
   var repoCount = 0;
 
-  authenticate(user);
+  authenticate();
   
   // For each member, send a request to github for their repos
   members.forEach(function(member) {
@@ -148,13 +194,13 @@ exports.getMemberRepos = function(req, res, next) {
             name: repo.name,
             stats: []
           });
-          repoCount++; // increment counter on mongo for user.repoCount
+          repoCount++; // increment counter on mongo for org.recentlyUpdatedRepoCount
         }
       });
 
       // Waits until all repos have been completed until saving to DB
       if (++completedMembers === members.length) {
-        user.recentlyUpdatedRepoCount = repoCount;
+        org.recentlyUpdatedRepoCount = repoCount;
         saveData(req, res, next);
       }
     });
@@ -174,8 +220,8 @@ exports.getMemberRepos = function(req, res, next) {
 /**
  * ======= STEP 3 ========
  *
- * Goes through each repo in the authenticated user's orgMembers array and gets all stats associated with each repo
- * Stores all stats in user.orgMembers.[[member]].[[repo]].stats array in mongo
+ * Goes through each repo in the authenticated org's members array and gets all stats associated with each repo
+ * Stores all stats in org.members.[[member]].[[repo]].stats array in mongo
  * 
  * This is an expensive call so Github only returns archived data
  * We have to make the calls twice in order to make sure they are archived. (There's got to be a better way)
@@ -184,11 +230,11 @@ exports.getMemberRepos = function(req, res, next) {
 
 exports.getRepoStats = function(req, res, next) {
   console.log("github.getRepoStats called");
-  var user = req.user;
-  var members = user.orgMembers;
+  var org = req.org;
+  var members = org.members;
   var completedRepos = 0;
 
-  authenticate(user);
+  authenticate();
   
   members.forEach(function(member) {
     // Skip over any member that has no recently updated repos
@@ -196,7 +242,7 @@ exports.getRepoStats = function(req, res, next) {
       var options = {
         username: member.username,
         repo: repo.name,
-        token: user.token
+        token: secret.githubToken
       };
 
       // Get codeFrequency stats
@@ -213,7 +259,7 @@ exports.getRepoStats = function(req, res, next) {
         repo.stats.punchCard = stats;
         console.log("number of completed requests down: ", completedRepos + 1);
         // Save data to mongo when all recently updated repos have been accounted for
-        if (++completedRepos === user.recentlyUpdatedRepoCount) {
+        if (++completedRepos === org.recentlyUpdatedRepoCount) {
           saveData(req, res, next);
         }
       });
@@ -228,7 +274,7 @@ exports.getRepoStats = function(req, res, next) {
  */
 
 exports.sendResponse = function(req, res) {
-  console.log("Got all github data! Woo!")
-  res.send(req.user.profile); // Maybe redirect to homepage
+  console.log("Got all github data! Woo!");
+  res.send(req.org.profile); // Maybe redirect to homepage
 };
 
