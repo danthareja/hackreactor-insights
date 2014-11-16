@@ -33,7 +33,7 @@ exports.getCodeFrequency = function(req, res) {
   filtered.forEach(function(member) {
     member.repos.forEach(function(repo) {
       parseStats(repo.stats.codeFrequency).forEach(function(stat) {
-        console.log("repo: ", repo.name, "date: ", stat[0]);
+        // console.log("repo: ", repo.name, "date: ", stat[0]);
         // codeFrequency stats come in tuples [date, additions, deletions]
         // We want to make sure there's at least some action!
         if (isLastSaturday(stat[0]) && stat[1] > 0 && stat[2] < 0) {
@@ -65,7 +65,7 @@ exports.getCodeFrequency = function(req, res) {
     var saturday = new Date(today.setDate(today.getDate()-today.getDay()-1));
     return date === saturday.setHours(saturday.getHours()+16) / 1000;
   }
-
+  debugger;
 };
 
 
