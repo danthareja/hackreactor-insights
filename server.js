@@ -17,7 +17,6 @@ var mongoose = require("mongoose");
  * Controllers (route handlers).
  */
 
- // var githubMiddleware = require('./controllers/githubMiddleware');
  var mongoController = require('./controllers/mongo');
 
 /**
@@ -65,7 +64,6 @@ app.use(static(__dirname + "/public", "index.html")); // serve index, Angular ta
 
 /**
  * Mongo routes. Gets stored repo statistics and converts it to d3 friendly format.
- * TODO: Figure out a way to persist req.org so we don't have to middleware through getOrg and slow down response time
  */
 
 app.get("/api/stats/code_frequency", mongoController.getOrganization, mongoController.getCodeFrequency);

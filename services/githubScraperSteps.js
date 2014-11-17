@@ -1,7 +1,14 @@
 // TODO: Error handling
 var github = require("./githubScraperHelpers");
 var secret = require("../config/secret");
+var mongoose = require("mongoose");
 var Organization = require("../models/Organization");
+
+// Connect to mongo
+mongoose.connect(secret.db);
+mongoose.connection.on('error', function() {
+  console.error('MongoDB Connection Error. Make sure MongoDB is running.');
+});
 
 // Save data to mongo
 var saveData = function(org, next) {
@@ -23,16 +30,13 @@ var saveData = function(org, next) {
 
 exports.getOrganization = function(name, next) {
   name = name || 'hackreactor';
-  console.log('getting organization data for ', name);
 
   github.authenticateWithToken();
 
   github.orgs.getAsync({ org: name, per_page: 100})
   .then(function(org) {
-    console.log('got org from getOrganization!', org)
     // Check to see if organization already exists in our db and create a new one if not
     Organization.findOne({ login: org.login }, (function(err, existingOrg) {
-      console.log('Organization.findOne done! ', err, existingOrg);
       if (existingOrg) {
         next(existingOrg); // Pass on reference to the existing org
       } else {
@@ -212,5 +216,6 @@ exports.getRepoStats = function(org, next) {
  */
 
 exports.allDone = function(org) {
-  console.log("Got all github data! Woo!");
+  console.log("Got all github data! Woo! Closing down mongo...");
+  mongoose.connection.close();
 };

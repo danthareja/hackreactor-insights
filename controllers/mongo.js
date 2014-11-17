@@ -100,7 +100,6 @@ exports.getCodeFrequency = function(req, res) {
     var saturday = new Date(today.setDate(today.getDate()-today.getDay()-1));
     return date === saturday.setHours(saturday.getHours()+16) / 1000;
   }
-  debugger;
 };
 
 
