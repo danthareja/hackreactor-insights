@@ -17,7 +17,7 @@ var mongoose = require("mongoose");
  * Controllers (route handlers).
  */
 
- var githubMiddleware = require('./controllers/githubMiddleware');
+ // var githubMiddleware = require('./controllers/githubMiddleware');
  var mongoController = require('./controllers/mongo');
 
 /**
@@ -64,23 +64,12 @@ app.use(static(__dirname + "/public", "index.html")); // serve index, Angular ta
 
 
 /**
- * GitHub API routes. Gets data from github and saves it to mongo.
- */
-
-// Refactors github requests into middleware. TODO: Error Handling
-app.get("/api/github/org", githubMiddleware.getOrganization, githubMiddleware.sendResponse);
-app.get("/api/github/members", githubMiddleware.getMembers, githubMiddleware.sendResponse);
-app.get("/api/github/repos", githubMiddleware.getMemberRepos, githubMiddleware.sendResponse);
-app.get("/api/github/stats", githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
-app.get("/api/github/all", githubMiddleware.getOrganization, githubMiddleware.getMembers, githubMiddleware.getMemberRepos, githubMiddleware.getRepoStats, githubMiddleware.sendResponse);
-
-/**
  * Mongo routes. Gets stored repo statistics and converts it to d3 friendly format.
  * TODO: Figure out a way to persist req.org so we don't have to middleware through getOrg and slow down response time
  */
 
-app.get("/api/stats/code_frequency", githubMiddleware.getOrganization, mongoController.getCodeFrequency);
-app.get("/api/stats/punch_card", githubMiddleware.getOrganization, mongoController.getPunchCard);
+app.get("/api/stats/code_frequency", mongoController.getOrganization, mongoController.getCodeFrequency);
+app.get("/api/stats/punch_card", mongoController.getOrganization, mongoController.getPunchCard);
 
 
 /**

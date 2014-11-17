@@ -1,74 +1,15 @@
-// TODO: Error handling. res.send errors along the way of the middleware
-var http = require("request");
-var Promise = require("bluebird");
-var GitHubApi = require("github");
-var Organization = require("../models/Organization");
+// TODO: Error handling
+var github = require("./githubScraperHelpers");
 var secret = require("../config/secret");
-
-/**
- * Instantiate API
- */
-
-var github = new GitHubApi({
-  version: "3.0.0"
-});
-
-/**
- * API extensions
- */
-
-github.repos.stats = {};
-github.repos.stats.codeFrequency = getGithubStats("code_frequency");
-github.repos.stats.punchCard = getGithubStats("punch_card");
-github.repos.stats.commitActivity = getGithubStats("commit_activity"); // Not used
-
-function getGithubStats(type) {
-  return function(options, callback) {
-    var getOptions = {
-      url: "https://api.github.com/repos/" + options.username + "/" + options.repo + "/stats/" + type + "?access_token=" + options.token,
-      type: "GET",
-      headers: {
-        "User-Agent": "danthareja"
-      }
-    };
-    http(getOptions, function(err, stats) {
-      // Callback with only data we're interested in
-      callback(err, stats.body);
-    });
-  };
-}
-
-/**
- * Promisify our API
- */
-
-Promise.promisifyAll(github);
-Promise.promisifyAll(github.user);
-Promise.promisifyAll(github.orgs);
-Promise.promisifyAll(github.repos);
-Promise.promisifyAll(github.repos.stats);
-
-/**
- * Helper functions 
- */
-
-// Authenticate user 
-var authenticate = function() {
- github.authenticate({
-   type: "oauth",
-   token: secret.githubToken
- });
- console.log("authenticated user!");
-};
+var Organization = require("../models/Organization");
 
 // Save data to mongo
-var saveData = function(req, res, next) {
-  req.org.save(function(err, user, numberAffected) {
+var saveData = function(org, next) {
+  org.save(function(err, user, numberAffected) {
     if (err) console.log("Error saving data to mongo", err);
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected");
-      // Go to next step
-      next();
+      next(org);
     }
   });
 };
@@ -80,19 +21,20 @@ var saveData = function(req, res, next) {
  * Creates a new entry in mongo if that organization does not exist yet.
  */
 
-exports.getOrganization = function(req, res, next) {
-  org = req.query.org || 'hackreactor'; // Allow users to send custom org over query string
-  console.log('getting organization data for ', org);
+exports.getOrganization = function(name, next) {
+  name = name || 'hackreactor';
+  console.log('getting organization data for ', name);
 
-  authenticate();
+  github.authenticateWithToken();
 
-  github.orgs.getAsync({ org: org, per_page: 100})
+  github.orgs.getAsync({ org: name, per_page: 100})
   .then(function(org) {
+    console.log('got org from getOrganization!', org)
     // Check to see if organization already exists in our db and create a new one if not
     Organization.findOne({ login: org.login }, (function(err, existingOrg) {
+      console.log('Organization.findOne done! ', err, existingOrg);
       if (existingOrg) {
-        req.org = existingOrg; // Pass on reference to the existing org
-        next();
+        next(existingOrg); // Pass on reference to the existing org
       } else {
         var newOrg = new Organization();
         newOrg.login = org.login;
@@ -109,8 +51,7 @@ exports.getOrganization = function(req, res, next) {
         newOrg.profile.updated_at = org.updated_at;
         newOrg.save(function(err) {
           console.log("saving new org", newOrg.name);
-          req.org = newOrg; // Pass on reference to the new org
-          next();
+          next(newOrg); // Pass on reference to the new org
         });
       }
     }));
@@ -124,12 +65,11 @@ exports.getOrganization = function(req, res, next) {
  * Stores all members in user.members array in Mongo
  */
 
-exports.getMembers = function(req, res, next) {
-  var org = req.org;
+exports.getMembers = function(org, next) {
   var pages = 2;
   org.members = [];
 
-  authenticate();
+  github.authenticateWithToken();
   getGithubMembers();
 
   // Gets all the members in order to completion, then saves data
@@ -137,7 +77,7 @@ exports.getMembers = function(req, res, next) {
     page = page || 1;
     // After all members gotten, save the data and send a response
     if (page > pages) {
-      saveData(req, res, next);
+      saveData(org, next);
     } else {
       console.log("Requesting page ", page, " members");
       github.orgs.getMembersAsync({ org: "hackreactor", per_page: 100, page: page})
@@ -165,13 +105,12 @@ exports.getMembers = function(req, res, next) {
  */
 
 // TODO: rethink ++completed requests
-exports.getMemberRepos = function(req, res, next) {
-  var org = req.org;
+exports.getMemberRepos = function(org, next) {
   var members = org.members;
   var completedMembers = 0;
   var repoCount = 0;
 
-  authenticate();
+  github.authenticateWithToken();
   
   // For each member, send a request to github for their repos
   members.forEach(function(member) {
@@ -201,7 +140,7 @@ exports.getMemberRepos = function(req, res, next) {
       // Waits until all repos have been completed until saving to DB
       if (++completedMembers === members.length) {
         org.recentlyUpdatedRepoCount = repoCount;
-        saveData(req, res, next);
+        saveData(org, next);
       }
     });
   });
@@ -228,13 +167,12 @@ exports.getMemberRepos = function(req, res, next) {
  * NOTE: All stats are stored as a stringified form
  */
 
-exports.getRepoStats = function(req, res, next) {
+exports.getRepoStats = function(org, next) {
   console.log("github.getRepoStats called");
-  var org = req.org;
   var members = org.members;
   var completedRepos = 0;
 
-  authenticate();
+  github.authenticateWithToken();
   
   members.forEach(function(member) {
     // Skip over any member that has no recently updated repos
@@ -260,7 +198,7 @@ exports.getRepoStats = function(req, res, next) {
         console.log("number of completed requests down: ", completedRepos + 1);
         // Save data to mongo when all recently updated repos have been accounted for
         if (++completedRepos === org.recentlyUpdatedRepoCount) {
-          saveData(req, res, next);
+          saveData(org, next);
         }
       });
     });
@@ -273,8 +211,6 @@ exports.getRepoStats = function(req, res, next) {
  * Everything is complete! Send a success response
  */
 
-exports.sendResponse = function(req, res) {
+exports.allDone = function(org) {
   console.log("Got all github data! Woo!");
-  res.send(req.org.profile); // Maybe redirect to homepage
 };
-
