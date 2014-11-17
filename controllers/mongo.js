@@ -28,6 +28,7 @@ exports.getOrganization = function(req, res, next) {
         req.org = existingOrg; // Pass on reference to the existing org
         next();
       } else {
+        // Maybe req.send 'no data found for this??'
         var newOrg = new Organization();
         newOrg.login = org.login;
         newOrg.profile.name = org.name;

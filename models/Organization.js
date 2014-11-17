@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
 var organizationSchema = new mongoose.Schema({
-  // Org profile info from GET orgs/[name]
+  // Profile info
   login: { type: String, default: '' }, // username
   profile: {
     name: { type: String, default: '' },

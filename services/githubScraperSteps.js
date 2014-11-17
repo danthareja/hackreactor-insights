@@ -22,7 +22,7 @@ var saveData = function(org, next) {
 };
 
 /**
- * ======= STEP 0 ========
+ * ======= STEP 1 ========
  *
  * Makes an initial call to GitHub with the organization we want to lookup.
  * Creates a new entry in mongo if that organization does not exist yet.
@@ -63,7 +63,7 @@ exports.getOrganization = function(name, next) {
 };
 
 /**
- * ======= STEP 1 ========
+ * ======= STEP 2 ========
  *
  * Gets both hidden and public memberships in Hack Reactor for currently authenticated user.
  * Stores all members in user.members array in Mongo
@@ -102,7 +102,7 @@ exports.getMembers = function(org, next) {
 
 
 /**
- * ======= STEP 2 ========
+ * ======= STEP 3 ========
  *
  * Goes through each member in the authenticated user's members array and gets all repos associated with each member
  * Stores ONLY REPOS UPDATED IN THE LAST WEEK in user.members.[[member]].repos array in mongo. NOTE: Update does not mean a commit was made
@@ -161,7 +161,7 @@ exports.getMemberRepos = function(org, next) {
 
 
 /**
- * ======= STEP 3 ========
+ * ======= STEP 4 ========
  *
  * Goes through each repo in the authenticated org's members array and gets all stats associated with each repo
  * Stores all stats in org.members.[[member]].[[repo]].stats array in mongo
@@ -210,9 +210,9 @@ exports.getRepoStats = function(org, next) {
 };
 
 /**
- * ======= STEP 4 ========
+ * ======= STEP 5 ========
  *
- * Everything is complete! Send a success response
+ * Everything is complete! Shut down mongo
  */
 
 exports.allDone = function(org) {
