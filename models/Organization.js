@@ -20,13 +20,15 @@ var organizationSchema = new mongoose.Schema({
   // Format for each member of the organization
   members: [{
     username: String,
+    etag: { type: String, default: '' },
     repos: [{
       name: String,
+      lastModified: String,
       stats: {
         codeFrequency: String,
         punchCard: String,
         commitActivity: String,
-      }
+      },
     }]
   }],
 

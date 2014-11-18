@@ -1,42 +1,15 @@
+var async = require("async");
 var github = require("./githubScraperSteps");
 
-/**
- * Pipe - Performs a collection of async tasks synchronously
- *
- * How to use pipe: 
- * Pipe invokes callbacks from left to right
- * The callbacks passed into pipe must accept the next() function as their last argument. 
- * When a callback is done and ready to move down the pipe, invoke next inside of the callback and pass in any arguments you want the subsequent function to work on.
- * To start, you must invoke the constructed pipe with any arguments expected in the first callback
- * 
- */
+// var getGitHubStats = async.compose(github.allDone, github.getRepoStats, github.getMemberRepos, github.getMembers, github.getOrganization);
+// getGitHubStats('hackreactor', function(err, results) {
+//   console.log('All done!');
+// });
 
-var pipe = function() {
-  var slice = Array.prototype.slice;
-  var fns = slice.call(arguments);
-  var currentFn = 0; // Keeps track of which function we're on
-
-  var next = function() {
-    // Get next function in the fn list
-    var fn = fns[++currentFn];
-
-    // Invoke subsequent function with arguments passed into next
-    console.log('calling function number', currentFn + 1, 'of', fns.length, 'in the pipe');
-    fn.apply(null, slice.call(arguments).concat(next));
-  };
-
-  // Kick off first function in the pipe with whatever arguments we want to pass into it
-  return function() {
-    console.log('calling function number 1 of', fns.length, 'in the pipe');
-    fns[0].apply(null, slice.call(arguments).concat(next));
-  };
-};
-
-var getGitHubStats = pipe(github.getOrganization, github.getMembers, github.getMemberRepos, github.getRepoStats, github.allDone);
-var testMe = pipe(github.getOrganization, github.getMembers, github.allDone);
-
-getGitHubStats('hackreactor');
-// testMe('hackreactor');
+var testMe = async.compose(github.allDone, github.getRepoStats, github.getOrganization);
+testMe('hackreactor', function(err, results) {
+  console.log('All done!');
+});
 
 // If-ModifiedSince
 // curl -i https://api.github.com/users/kayellpeee?access_token=2b46b34cef88b53a0d5165b09df76b5b54975400

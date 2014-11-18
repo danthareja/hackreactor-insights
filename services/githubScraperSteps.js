@@ -11,12 +11,12 @@ mongoose.connection.on('error', function() {
 });
 
 // Save data to mongo
-var saveData = function(org, next) {
+var saveData = function(org, callback) {
   org.save(function(err, user, numberAffected) {
     if (err) console.log("Error saving data to mongo", err);
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected");
-      next(org);
+      callback(null, org);
     }
   });
 };
@@ -28,17 +28,17 @@ var saveData = function(org, next) {
  * Creates a new entry in mongo if that organization does not exist yet.
  */
 
-exports.getOrganization = function(name, next) {
+exports.getOrganization = function(name, callback) {
   name = name || 'hackreactor';
 
   github.authenticateWithToken();
-
   github.orgs.getAsync({ org: name, per_page: 100})
   .then(function(org) {
+    console.log(org.meta);
     // Check to see if organization already exists in our db and create a new one if not
     Organization.findOne({ login: org.login }, (function(err, existingOrg) {
       if (existingOrg) {
-        next(existingOrg); // Pass on reference to the existing org
+        callback(null, existingOrg); // Pass on reference to the existing org
       } else {
         var newOrg = new Organization();
         newOrg.login = org.login;
@@ -54,8 +54,8 @@ exports.getOrganization = function(name, next) {
         newOrg.profile.created_at = org.created_at;
         newOrg.profile.updated_at = org.updated_at;
         newOrg.save(function(err) {
-          console.log("saving new org", newOrg.name);
-          next(newOrg); // Pass on reference to the new org
+          console.log("saving new org", newOrg.profile.name);
+          callback(null, newOrg); // Pass on reference to the new org
         });
       }
     }));
@@ -69,9 +69,8 @@ exports.getOrganization = function(name, next) {
  * Stores all members in user.members array in Mongo
  */
 
-exports.getMembers = function(org, next) {
-  var pages = 2;
-  org.members = [];
+exports.getMembers = function(org, callback) {
+  var pages = 2; // TODO: Figure out how to not hard code this
 
   github.authenticateWithToken();
   getGithubMembers();
@@ -81,20 +80,28 @@ exports.getMembers = function(org, next) {
     page = page || 1;
     // After all members gotten, save the data and send a response
     if (page > pages) {
-      saveData(org, next);
+      saveData(org, callback);
     } else {
       console.log("Requesting page ", page, " members");
       github.orgs.getMembersAsync({ org: "hackreactor", per_page: 100, page: page})
       .then(function(members) {
+        var memberCount = 0;
         members.forEach(function(member) {
-          console.log("adding ", member.login);
-          org.members.push({
-            username: member.login,
-            repos: []
+          // Only add members if they don't exist yet
+          Organization.findOne({"members.username": member.login}, function(err, existingUser) {
+            if (!existingUser) {
+              console.log("adding ", member.login);
+              org.members.push({
+                username: member.login,
+                repos: []
+              });
+            } else { console.log(member.login, "already exists in the database"); }
+            // Recursively call with the next page until we reach set page number above
+            if (++memberCount === members.length) {
+              getGithubMembers(page + 1);
+            }
           });
         });
-        // Recursively call with the next page until we reach set page number above
-        getGithubMembers(page + 1);
       });
     }
   }
@@ -109,7 +116,7 @@ exports.getMembers = function(org, next) {
  */
 
 // TODO: rethink ++completed requests
-exports.getMemberRepos = function(org, next) {
+exports.getMemberRepos = function(org, callback) {
   var members = org.members;
   var completedMembers = 0;
   var repoCount = 0;
@@ -118,7 +125,6 @@ exports.getMemberRepos = function(org, next) {
   
   // For each member, send a request to github for their repos
   members.forEach(function(member) {
-    member.repos = []; // Reset repos
 
     var options = {
       user: member.username,
@@ -127,8 +133,10 @@ exports.getMemberRepos = function(org, next) {
       per_page: 100
     };
 
+    // Only repos with a different etag (aka have been changed recently)
     github.repos.getFromUserAsync(options)
     .then(function(repos) {
+      member.etag = repos.meta.etag;
       // Push recently updated repos to mongo
       repos && repos.forEach(function(repo) {
         if (wasUpdatedThisWeek(repo)) {
@@ -144,7 +152,7 @@ exports.getMemberRepos = function(org, next) {
       // Waits until all repos have been completed until saving to DB
       if (++completedMembers === members.length) {
         org.recentlyUpdatedRepoCount = repoCount;
-        saveData(org, next);
+        saveData(org, callback);
       }
     });
   });
@@ -171,7 +179,7 @@ exports.getMemberRepos = function(org, next) {
  * NOTE: All stats are stored as a stringified form
  */
 
-exports.getRepoStats = function(org, next) {
+exports.getRepoStats = function(org, callback) {
   console.log("github.getRepoStats called");
   var members = org.members;
   var completedRepos = 0;
@@ -182,27 +190,26 @@ exports.getRepoStats = function(org, next) {
     // Skip over any member that has no recently updated repos
     member.repos.length > 0 && member.repos.forEach(function(repo) {
       var options = {
-        username: member.username,
+        user: member.username,
         repo: repo.name,
-        token: secret.githubToken
       };
 
       // Get codeFrequency stats
-      github.repos.stats.codeFrequencyAsync(options)
+      github.repos.getStatsCodeFrequencyAsync(options)
       .then(function(stats) {
         console.log("repo found! got codeFrequency for member ", member.username, " and repo ", repo.name);
         repo.stats.codeFrequency = stats;
       });
 
       // Get punchCard stats
-      github.repos.stats.punchCardAsync(options)
+      github.repos.getStatsPunchCardAsync(options)
       .then(function(stats) {
         console.log("repo found! got punchCard for member ", member.username, " and repo ", repo.name);
         repo.stats.punchCard = stats;
         console.log("number of completed requests down: ", completedRepos + 1);
         // Save data to mongo when all recently updated repos have been accounted for
         if (++completedRepos === org.recentlyUpdatedRepoCount) {
-          saveData(org, next);
+          saveData(org, callback);
         }
       });
     });
@@ -215,7 +222,7 @@ exports.getRepoStats = function(org, next) {
  * Everything is complete! Shut down mongo
  */
 
-exports.allDone = function(org) {
+exports.allDone = function(org, callback) {
   console.log("Got all github data! Woo! Closing down mongo...");
   mongoose.connection.close();
 };
