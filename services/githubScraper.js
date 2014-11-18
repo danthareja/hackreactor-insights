@@ -5,7 +5,7 @@
 var async = require("async");
 var mongoose = require("mongoose");
 var secret = require("../config/secret");
-var GitHubApi = require("node-github"); // This is my updated version with statistics. Maybe need to commit this separately if it doesn't get pulled in (https://github.com/mikedeboer/node-github/pull/207)
+var GitHubApi = require("github"); // Extended this to add the stats I needed. (https://github.com/mikedeboer/node-github/pull/207)
 var Organization = require("../models/Organization");
 
 // Connect to mongo
@@ -27,7 +27,7 @@ github.authenticate({
 
 
 /**
- * Run block - Compose our function and run it
+ * Run block - Compose our steps and run it
  */
 
 // var getGitHubStats = async.seq(getOrganization, getMembers, getMemberRepos, getRepoStats);
@@ -35,18 +35,19 @@ github.authenticate({
 //   console.log('All done!');
 // });
 
-var testMe = async.seq(getOrg, addIfNewOrg, saveDataToMongo, allDone);
+var testMe = async.seq(getOrg, addIfNewOrg, saveDataToMongo, getMembers, allDone);
 testMe('hackreactor', function(err, results) {
   console.log('All done!');
 });
 
 // Helper methods
-function saveDataToMongo(doc, callback) {
-  doc.save(function(err, user, numberAffected) {
+function saveDataToMongo(org, callback) {
+  console.log('--- Calling saveDataToMongo ---');
+  org.save(function(err, user, numberAffected) {
     if (err) console.log("Error saving data to mongo", err);
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected. (1 = worked)");
-      callback(null, doc);
+      callback(null, org);
     }
   });
 }
@@ -64,11 +65,16 @@ function queryDatabase(query, callback) {
   });
 }
 
+function hasNextPage(page, link) {
+  return function() {
+    page === 1 || github.hasNextPage(link);
+  };
+}
+
 /**
  * ======= STEP 1 ========
  *
  * Makes an initial call to GitHub with the organization we want to lookup.
- * Creates a new entry in mongo if that organization does not exist yet.
  */
 
 function getOrg(name, callback) {
@@ -76,9 +82,16 @@ function getOrg(name, callback) {
   var options = { org: name, per_page: 100 };
   github.orgs.get(options, function(err, org) {
     console.log('Results returned from github.org.get', org.login);
-    if (!err) { callback(null, org); }
+    if (org) { callback(null, org); }
+    else { callback('Error getting data from github.orgs.get', null); }
   });
 }
+
+/**
+ * ======= STEP 2 ========
+ *
+ * Creates a new entry in mongo if that organization does not exist yet.
+ */
 
 function addIfNewOrg(org, callback) {
   console.log('--- Calling addIfNewOrg for', org.login, '---');
@@ -108,49 +121,63 @@ function addIfNewOrg(org, callback) {
 }
 
 /**
- * ======= STEP 2 ========
+ * ======= STEP 3 ========
  *
  * Gets both hidden and public memberships in Hack Reactor for currently authenticated user.
- * Stores all members in user.members array in Mongo
  */
- 
 
 function getMembers(org, callback) {
-  var pages = 2; // TODO: Figure out how to not hard code this
-
-  getGithubMembers();
-
-  // Gets all the members in order to completion, then saves data
-  function getGithubMembers(page) {
-    page = page || 1;
-    // After all members gotten, save the data and send a response
-    if (page > pages) {
-      saveDataToMongo(org, callback);
-    } else {
-      console.log("Requesting page ", page, " members");
-      github.orgs.getMembersAsync({ org: "hackreactor", per_page: 100, page: page})
-      .then(function(members) {
-        var memberCount = 0;
-        members.forEach(function(member) {
-          // Only add members if they don't exist yet
-          Organization.findOne({"members.username": member.login}, function(err, existingUser) {
-            if (!existingUser) {
-              console.log("adding ", member.login);
-              org.members.push({
-                username: member.login,
-                repos: []
-              });
-            } else { console.log(member.login, "already exists in the database"); }
-            // Recursively call with the next page until we reach set page number above
-            if (++memberCount === members.length) {
-              getGithubMembers(page + 1);
-            }
-          });
-        });
-      });
-    }
-  }
+  var page = 1;
+  var options = { org: "hackreactor", per_page: 100, page: page };
+  github.orgs.getMembers(options, function(err, members) {
+    console.log('members', members);
+    console.log('meta', members.meta);
+    console.log('next page? ', github.hasNextPage(members.meta.link));
+    callback(null, members);
+  });
 }
+
+ /**
+  * ======= STEP 4 ========
+  *
+  * Stores all members in user.members array in Mongo
+  */
+// function getMembers(org, callback) {
+//   var pages = 2; // TODO: Figure out how to not hard code this
+
+//   getGithubMembers();
+
+//   // Gets all the members in order to completion, then saves data
+//   function getGithubMembers(page) {
+//     page = page || 1;
+//     // After all members gotten, save the data and send a response
+//     if (page > pages) {
+//       saveDataToMongo(org, callback);
+//     } else {
+//       console.log("Requesting page ", page, " members");
+//       github.orgs.getMembersAsync({ org: "hackreactor", per_page: 100, page: page})
+//       .then(function(members) {
+//         var memberCount = 0;
+//         members.forEach(function(member) {
+//           // Only add members if they don't exist yet
+//           Organization.findOne({"members.username": member.login}, function(err, existingUser) {
+//             if (!existingUser) {
+//               console.log("adding ", member.login);
+//               org.members.push({
+//                 username: member.login,
+//                 repos: []
+//               });
+//             } else { console.log(member.login, "already exists in the database"); }
+//             // Recursively call with the next page until we reach set page number above
+//             if (++memberCount === members.length) {
+//               getGithubMembers(page + 1);
+//             }
+//           });
+//         });
+//       });
+//     }
+//   }
+// }
 
 
 // /**
