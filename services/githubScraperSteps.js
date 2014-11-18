@@ -1,4 +1,7 @@
-// TODO: Error handling
+// TODO: Error handling. 
+// TODO: Update entries in mongo instead of wiping them clean every time. 
+// TODO: Use the async library to make this all easier. Maybe even unpromisify?
+// TODO: Handle multiple pages (github.nextPage should do it)
 var github = require("./githubScraperHelpers");
 var secret = require("../config/secret");
 var mongoose = require("mongoose");

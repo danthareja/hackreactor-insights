@@ -23,7 +23,6 @@ github.authenticateWithToken = function() {
  console.log("authenticated user!");
 };
 
-
 /**
  * Promisify our API
  */
