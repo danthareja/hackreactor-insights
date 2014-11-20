@@ -23,6 +23,7 @@ var organizationSchema = new mongoose.Schema({
     etag: { type: String, default: '' },
     repos: [{
       name: String,
+      owner: String,
       stats: {
         codeFrequency: String,
         punchCard: String,
@@ -31,8 +32,6 @@ var organizationSchema = new mongoose.Schema({
       updated_at: Date
     }]
   }],
-
-  recentlyUpdatedRepoCount: Number, // To handle aync stuff
 });
 
 module.exports = mongoose.model('Organization', organizationSchema);
