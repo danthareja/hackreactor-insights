@@ -35,19 +35,26 @@ github.authenticate({
 //   console.log('All done!');
 // });
 
-var testMe = async.seq(getOrg, addIfNewOrg, saveDataToMongo, getMembers, allDone);
+var testMe = async.seq(
+  getOrganization,
+  allDone
+);
+
 testMe('hackreactor', function(err, results) {
   console.log('All done!');
 });
 
 // Helper methods
-function saveDataToMongo(org, callback) {
-  console.log('--- Calling saveDataToMongo ---');
-  org.save(function(err, user, numberAffected) {
-    if (err) console.log("Error saving data to mongo", err);
+function saveDataToDatabase(doc, callback) {
+  console.log('--- Calling saveDataToDatabase ---');
+  doc.save(function(err, user, numberAffected) {
+    if (err) {
+      console.log("Error saving data to mongo", err);
+      callback('Error saving data to mongo', null);
+    }
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected. (1 = worked)");
-      callback(null, org);
+      callback(null, doc);
     }
   });
 }
@@ -55,70 +62,84 @@ function saveDataToMongo(org, callback) {
 function queryDatabase(query, callback) {
   console.log('--- Calling queryDatabase ---');
   Organization.findOne(query, function(err, results) {
-    if (results) {
-      console.log('Results found!');
+    if (err) {
+      callback(err, null);
+    } else if (results) {
+      console.log('At least one result found from query!');
       callback(null, results);
     } else {
-      console.log('Results not found :(');
-      callback('Query not found', null);
+      console.log('Zero results found from query'); // Verbose logging
+      callback(null, results);
     }
   });
-}
-
-function hasNextPage(page, link) {
-  return function() {
-    page === 1 || github.hasNextPage(link);
-  };
 }
 
 /**
  * ======= STEP 1 ========
  *
- * Makes an initial call to GitHub with the organization we want to lookup.
+ * Get organizationCheck if the organization exists in our database, if not we have to create it
  */
 
-function getOrg(name, callback) {
-  console.log('--- Calling getOrg for', name, '---');
-  var options = { org: name, per_page: 100 };
+function getOrganization(name, callback) {
+  checkIfOrganizationExistsInDatabase(name, function(err, existingOrg) {
+    if (err) {
+      callback(err, null);
+    } else if (existingOrg) {
+      callback(null, existingOrg);
+    } else {
+      addNewOrganizationToDatabase(name, callback);
+    }
+  });
+}
+
+/* * *  STEP 1 HELPERS  * * */
+
+function checkIfOrganizationExistsInDatabase(name, callback) {
+  console.log('--- Calling checkIfOrganizationExistsInDatabse for', name, '---');
+  var query = { username: name };
+  queryDatabase(query, callback);
+}
+
+function addNewOrganizationToDatabase(name, callback) {
+  console.log('--- Calling addNewOrganizationToDatabase for', name, '---');
+  var options = { org: name };
   github.orgs.get(options, function(err, org) {
-    console.log('Results returned from github.org.get', org.login);
-    if (org) { callback(null, org); }
-    else { callback('Error getting data from github.orgs.get', null); }
+    if (err) {
+      callback(err, null);
+    } else {
+      console.log('Results returned from github.org.get', org.login);
+      var newOrg = createNewOrganization(org);
+      saveDataToDatabase(newOrg, callback);
+    }
+  });
+}
+
+function createNewOrganization(options) {
+  return new Organization({
+    username: options.login,
+    profile: {
+      display_name: options.name,
+      url: options.html_url,
+      avatar: options.avatar_url,
+      location: options.location,
+      email: options.email,
+      public_repos: options.public_repos,
+      public_gists: options.public_gists,
+      followers: options.followers,
+      following: options.following,
+      created_at: options.created_at,
+      updated_at: options.updated_at
+    }
   });
 }
 
 /**
  * ======= STEP 2 ========
  *
- * Creates a new entry in mongo if that organization does not exist yet.
+ * Get organization members
  */
 
-function addIfNewOrg(org, callback) {
-  console.log('--- Calling addIfNewOrg for', org.login, '---');
-  var query = { login: org.login };
-  queryDatabase(query, function(err, existingOrg) {
-    if (existingOrg) {
-      console.log('Org already exists! Passing it on..');
-      callback(null, existingOrg); // Pass on reference to the existing org
-    } else {
-      var newOrg = new Organization();
-      newOrg.login = org.login;
-      newOrg.profile.name = org.name;
-      newOrg.profile.url = org.html_url;
-      newOrg.profile.avatar = org.avatar_url;
-      newOrg.profile.location = org.location;
-      newOrg.profile.email = org.email;
-      newOrg.profile.public_repos = org.public_repos;
-      newOrg.profile.public_gists = org.public_gists;
-      newOrg.profile.followers = org.followers;
-      newOrg.profile.following = org.following;
-      newOrg.profile.created_at = org.created_at;
-      newOrg.profile.updated_at = org.updated_at;
-      console.log('New org created! Passing it on..');
-      callback(null, newOrg); // Pass on new org
-    }
-  });
-}
+
 
 /**
  * ======= STEP 3 ========

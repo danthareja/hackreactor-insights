@@ -2,9 +2,9 @@ var mongoose = require('mongoose');
 
 var organizationSchema = new mongoose.Schema({
   // Profile info
-  login: { type: String, default: '' }, // username
+  username: { type: String, default: '' },
   profile: {
-    name: { type: String, default: '' },
+    display_name: { type: String, default: '' },
     url: { type: String, default: '' },
     avatar: { type: String, default: '' },
     location: { type: String, default: '' },
@@ -23,12 +23,12 @@ var organizationSchema = new mongoose.Schema({
     etag: { type: String, default: '' },
     repos: [{
       name: String,
-      lastModified: String,
       stats: {
         codeFrequency: String,
         punchCard: String,
         commitActivity: String,
       },
+      updated_at: Date
     }]
   }],
 
