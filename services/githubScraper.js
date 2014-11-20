@@ -1,5 +1,3 @@
-// TODO: Use the async library to make this all easier. Maybe even unpromisify?
-// TODO: Error handling. 
 // TODO: Update entries in mongo instead of wiping them clean every time. 
 // TODO: Handle multiple pages (github.nextPage should do it)
 var async = require("async");
@@ -25,24 +23,23 @@ github.authenticate({
   token: secret.githubToken
 });
 
-
 /**
  * Run block - Compose our steps and run it
  */
 
-// var getGitHubStats = async.seq(getOrganization, getMembers, getMemberRepos, getRepoStats);
-// getGitHubStats('hackreactor', function(err, results) {
-//   console.log('All done!');
-// });
-
 var testMe = async.seq(
   getOrganization,
+  getOrganizationMembers,
   allDone
 );
 
-testMe('hackreactor', function(err, results) {
+testMe('hackreactor', function(err, res) {
   console.log('All done!');
 });
+
+// testMe('hackreactor', function(err, results) {
+//   console.log('All done!');
+// });
 
 // Helper methods
 function saveDataToDatabase(doc, callback) {
@@ -77,10 +74,14 @@ function queryDatabase(query, callback) {
 /**
  * ======= STEP 1 ========
  *
- * Get organizationCheck if the organization exists in our database, if not we have to create it
+ * Get organization. If the organization does not yet exist in the database, 
+ * grab its info from GitHub and create a new entry in the database.
+ *
+ * Passes an Organization object to the next step
  */
 
 function getOrganization(name, callback) {
+  console.log('--- Calling getOrganization for', name, '---');
   checkIfOrganizationExistsInDatabase(name, function(err, existingOrg) {
     if (err) {
       callback(err, null);
@@ -95,7 +96,7 @@ function getOrganization(name, callback) {
 /* * *  STEP 1 HELPERS  * * */
 
 function checkIfOrganizationExistsInDatabase(name, callback) {
-  console.log('--- Calling checkIfOrganizationExistsInDatabse for', name, '---');
+  console.log('--- Calling checkIfOrganizationExistsInDatabase for', name, '---');
   var query = { username: name };
   queryDatabase(query, callback);
 }
@@ -136,10 +137,59 @@ function createNewOrganization(options) {
 /**
  * ======= STEP 2 ========
  *
- * Get organization members
+ * Get organization members. This will use the organization passed in from step 1 and
+ * grab all members associated with the organization from GitHub. If the organization members have changes
+ * we will also update them in the database
+ *
+ * Passes an Organization object to the next step
  */
 
+function getOrganizationMembers(org, callback) {
+  console.log('--- Calling getOrganizationMembers for', org.username, '---');
+  var options = { org: org.username , per_page: 30 };
+  
+  paginateAndPush(github.orgs.getMembers, options, function(err, allMembers) {
+    console.log('Got all members!', allMembers);
+  });
+}
 
+/* * *  STEP 2 HELPERS  * * */
+
+// Runs the same GitHub API call while there's still more pages to get then runs the callback on an array of all results
+function paginateAndPush(githubFunc, options, callback) {
+  console.log('--- Calling paginateAndPush---');
+  // Holds results of all our paginated calls in closure scope
+  var result = [];
+
+  (function paginate(page) {
+    console.log('--- Calling paginate for page --', page, '---');
+    // Add the current page number to our options
+    options.page = page;
+    githubFunc(options, function(err, data) {
+      console.log('Github call returned!');
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      var hasNextPage = github.hasNextPage(data.meta.link); // Handy method provided in our API
+      
+      // Combine results
+      console.log('combining results - before', result.length);
+      result = result.concat(data);
+      console.log('combining results - after', result.length);
+
+      if(!hasNextPage) {
+        // When there's no more pages, invoke our callback on the collection of all data
+        callback(null, result);
+        return;
+      }
+
+      // Get data from the next page
+      paginate(page + 1);
+    });
+  })(1); // Kick off our recursion on the first page
+}
 
 /**
  * ======= STEP 3 ========
