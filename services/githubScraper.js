@@ -42,15 +42,15 @@ testMe('hackreactor', function(err, res) {
 // });
 
 // Helper methods
-function saveDataToDatabase(doc, callback) {
-  console.log('--- Calling saveDataToDatabase ---');
+function saveData(doc, callback) {
+  console.log('--- Calling saveData ---');
   doc.save(function(err, user, numberAffected) {
     if (err) {
       console.log("Error saving data to mongo", err);
       callback('Error saving data to mongo', null);
     }
     else {
-      console.log("All data saved to mongo! ", numberAffected, " entries affected. (1 = worked)");
+      console.log("All data saved to mongo! ", numberAffected, " entries affected. (1 = worked). Moving on to next step..");
       callback(null, doc);
     }
   });
@@ -58,102 +58,19 @@ function saveDataToDatabase(doc, callback) {
 
 function queryDatabase(query, callback) {
   console.log('--- Calling queryDatabase ---');
-  Organization.findOne(query, function(err, results) {
+  // Because of the way mongo works, the result will always be an organization here. Maybe rethink this
+  Organization.findOne(query, function(err, org) {
     if (err) {
       callback(err, null);
-    } else if (results) {
+    } else if (org) {
       console.log('At least one result found from query!');
-      callback(null, results);
+      callback(null, org);
     } else {
       console.log('Zero results found from query'); // Verbose logging
-      callback(null, results);
+      callback(null, org);
     }
   });
 }
-
-/**
- * ======= STEP 1 ========
- *
- * Get organization. If the organization does not yet exist in the database, 
- * grab its info from GitHub and create a new entry in the database.
- *
- * Passes an Organization object to the next step
- */
-
-function getOrganization(name, callback) {
-  console.log('--- Calling getOrganization for', name, '---');
-  checkIfOrganizationExistsInDatabase(name, function(err, existingOrg) {
-    if (err) {
-      callback(err, null);
-    } else if (existingOrg) {
-      callback(null, existingOrg);
-    } else {
-      addNewOrganizationToDatabase(name, callback);
-    }
-  });
-}
-
-/* * *  STEP 1 HELPERS  * * */
-
-function checkIfOrganizationExistsInDatabase(name, callback) {
-  console.log('--- Calling checkIfOrganizationExistsInDatabase for', name, '---');
-  var query = { username: name };
-  queryDatabase(query, callback);
-}
-
-function addNewOrganizationToDatabase(name, callback) {
-  console.log('--- Calling addNewOrganizationToDatabase for', name, '---');
-  var options = { org: name };
-  github.orgs.get(options, function(err, org) {
-    if (err) {
-      callback(err, null);
-    } else {
-      console.log('Results returned from github.org.get', org.login);
-      var newOrg = createNewOrganization(org);
-      saveDataToDatabase(newOrg, callback);
-    }
-  });
-}
-
-function createNewOrganization(options) {
-  return new Organization({
-    username: options.login,
-    profile: {
-      display_name: options.name,
-      url: options.html_url,
-      avatar: options.avatar_url,
-      location: options.location,
-      email: options.email,
-      public_repos: options.public_repos,
-      public_gists: options.public_gists,
-      followers: options.followers,
-      following: options.following,
-      created_at: options.created_at,
-      updated_at: options.updated_at
-    }
-  });
-}
-
-/**
- * ======= STEP 2 ========
- *
- * Get organization members. This will use the organization passed in from step 1 and
- * grab all members associated with the organization from GitHub. If the organization members have changes
- * we will also update them in the database
- *
- * Passes an Organization object to the next step
- */
-
-function getOrganizationMembers(org, callback) {
-  console.log('--- Calling getOrganizationMembers for', org.username, '---');
-  var options = { org: org.username , per_page: 30 };
-  
-  paginateAndPush(github.orgs.getMembers, options, function(err, allMembers) {
-    console.log('Got all members!', allMembers);
-  });
-}
-
-/* * *  STEP 2 HELPERS  * * */
 
 // Runs the same GitHub API call while there's still more pages to get then runs the callback on an array of all results
 function paginateAndPush(githubFunc, options, callback) {
@@ -192,63 +109,123 @@ function paginateAndPush(githubFunc, options, callback) {
 }
 
 /**
- * ======= STEP 3 ========
+ * ======= STEP 1 ========
  *
- * Gets both hidden and public memberships in Hack Reactor for currently authenticated user.
+ * Get organization. If the organization does not yet exist in the database, 
+ * grab its info from GitHub and create a new entry in the database.
+ *
+ * Passes an Organization object to the next step
  */
 
-function getMembers(org, callback) {
-  var page = 1;
-  var options = { org: "hackreactor", per_page: 100, page: page };
-  github.orgs.getMembers(options, function(err, members) {
-    console.log('members', members);
-    console.log('meta', members.meta);
-    console.log('next page? ', github.hasNextPage(members.meta.link));
-    callback(null, members);
+function getOrganization(name, callback) {
+  console.log('--- Calling getOrganization for', name, '---');
+  checkIfOrganizationExists(name, function(err, existingOrg) {
+    if (err) {
+      callback(err, null);
+    } else if (existingOrg) {
+      callback(null, existingOrg); // Move to step 2
+    } else {
+      addNewOrganization(name, callback);
+    }
   });
 }
 
- /**
-  * ======= STEP 4 ========
-  *
-  * Stores all members in user.members array in Mongo
-  */
-// function getMembers(org, callback) {
-//   var pages = 2; // TODO: Figure out how to not hard code this
+/* * *  STEP 1 HELPERS  * * */
 
-//   getGithubMembers();
+function checkIfOrganizationExists(name, callback) {
+  console.log('--- Calling checkIfOrganizationExists for', name, '---');
+  var query = { username: name };
+  queryDatabase(query, callback);
+}
 
-//   // Gets all the members in order to completion, then saves data
-//   function getGithubMembers(page) {
-//     page = page || 1;
-//     // After all members gotten, save the data and send a response
-//     if (page > pages) {
-//       saveDataToMongo(org, callback);
-//     } else {
-//       console.log("Requesting page ", page, " members");
-//       github.orgs.getMembersAsync({ org: "hackreactor", per_page: 100, page: page})
-//       .then(function(members) {
-//         var memberCount = 0;
-//         members.forEach(function(member) {
-//           // Only add members if they don't exist yet
-//           Organization.findOne({"members.username": member.login}, function(err, existingUser) {
-//             if (!existingUser) {
-//               console.log("adding ", member.login);
-//               org.members.push({
-//                 username: member.login,
-//                 repos: []
-//               });
-//             } else { console.log(member.login, "already exists in the database"); }
-//             // Recursively call with the next page until we reach set page number above
-//             if (++memberCount === members.length) {
-//               getGithubMembers(page + 1);
-//             }
-//           });
-//         });
-//       });
-//     }
-//   }
-// }
+function addNewOrganization(name, callback) {
+  console.log('--- Calling addNewOrganization for', name, '---');
+  var options = { org: name };
+  github.orgs.get(options, function(err, org) {
+    if (err) {
+      callback(err, null);
+    } else {
+      console.log('Results returned from github.org.get', org.login);
+      var newOrg = createNewOrganization(org);
+      saveData(newOrg, callback);
+    }
+  });
+}
+
+function createNewOrganization(options) {
+  return new Organization({
+    username: options.login,
+    profile: {
+      display_name: options.name,
+      url: options.html_url,
+      avatar: options.avatar_url,
+      location: options.location,
+      email: options.email,
+      public_repos: options.public_repos,
+      public_gists: options.public_gists,
+      followers: options.followers,
+      following: options.following,
+      created_at: options.created_at,
+      updated_at: options.updated_at
+    }
+  });
+}
+
+/**
+ * ======= STEP 2 ========
+ *
+ * Get organization members. This will use the organization passed in from step 1 and
+ * grab all members associated with the organization from GitHub. If the organization members have changes
+ * we will also update them in the database
+ *
+ * Passes an Organization object to the next step
+ */
+
+function getOrganizationMembers(org, callback) {
+  console.log('--- Calling getOrganizationMembers for', org.username, '---');
+  var options = { org: org.username , per_page: 100 };
+  
+  paginateAndPush(github.orgs.getMembers, options, function(err, allMembers) {
+    console.log('Got all members!');
+    
+    // Update our entries if there are any new members
+    if (org.members.length !== allMembers.length) {
+      console.log('New members found! Adding them...')
+      addNewOrganizationMembers(org, allMembers, callback);
+    } else {
+      console.log('No new members, moving on to step 3...')
+      callback(null, org); // Move to step 3
+    }
+  });
+}
+
+/* * *  STEP 2 HELPERS  * * */
+
+function addNewOrganizationMembers(org, members, callback) {
+  async.filter(members, isNewMember, function(newMembers) {
+    console.log('newMembers back from filter: ', newMembers);
+    // newMembers is now only those that didn't exist before in our database
+    newMembers.forEach(function(member) {
+      console.log('adding new member:', member.login);
+      org.members.push({
+        username: member.login,
+        repos: []
+      });
+    });
+    saveData(org, callback); // Will move to step 3
+  });
+}
+
+// async.filter test function
+function isNewMember(member, callback) {
+  var query = { "members.username": member.username };
+  queryDatabase(query, function(err, org) {
+    if (org) {
+      callback(false);
+    }
+    callback(true);
+  });
+}
 
 
 // /**
