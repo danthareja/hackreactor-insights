@@ -15,51 +15,6 @@ angular.module("hrStats", ["ui.router", "d3", "ngMaterial"])
  * d3 to visualize everything. Was this the most effiecient? Hell no. Was is a fun lesson in resolves and ui-router? You bet.
  */
 
-
-/**
- * ui.router config
- */
-
-.config(function($stateProvider, $urlRouterProvider) {
-  $urlRouterProvider.otherwise("/login");
-
-  $stateProvider
-    // Login :: auth -> loading
-    .state("login", {
-      url: "/login",
-      templateUrl: "partials/login.html",
-    })
-    // Loading (animation page) :: github -> home
-    .state("loading", {
-      url: "/loading",
-      templateUrl: "partials/loading.html",
-      controller: function($state, $http) {
-        $http.get("/api/github/all") // This should be 'all' in production
-          .then(function(profile) {
-            console.log("Going to home state profile.data: ", profile.data);
-            $state.go("home", profile.data); //TODO: Get this working, it's not passing right 
-          });
-        }
-    })
-    // Home :: resolve stats -> visual
-    // TODO: Something something, default here if logged in
-    .state("home", {
-      url: "/",
-      templateUrl: "partials/home.html",
-      resolve: {
-        codeFrequency: function($http) {
-          return $http.get("/api/stats/code_frequency")
-            .then(function(data) { return data.data; });
-        },
-        punchCard: function($http) {
-          return $http.get("/api/stats/punch_card")
-            .then(function(data) { return data.data; });
-        }
-      },
-      controller: "HomeController"
-    });
-})
-
 /**
  * controller: AppContoller - handles help dialog
  */
