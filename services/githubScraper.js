@@ -13,7 +13,8 @@ mongoose.connection.on('error', function() {
 var testMe = async.seq(
   github.getOrganization,
   github.getAllMembers,
-  github.getAllRepos
+  github.getAllRepos,
+  github.getAllStats
 );
 
 testMe('hackreactor', function(err, results) {

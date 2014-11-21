@@ -29,7 +29,7 @@ var organizationSchema = new mongoose.Schema({
         punchCard: String,
         commitActivity: String,
       },
-      updated_at: Date
+      updated_at: String
     }]
   }],
 });

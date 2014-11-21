@@ -205,9 +205,6 @@ function getReposForMember(member, doneWithAsyncIterator) {
 
     } else {
       console.log('Got all repos for member', member.username);
-      console.log('meta:', repos.meta.status);
-      console.log('length:', repos.length);
-
       // Update our entries if there are any new repos
       if (repos.length) {
         console.log('Etag changed! Checking if any of them returned repos are new for', member.username);
@@ -243,12 +240,11 @@ function addNewReposToMember(member, repos, doneWithAsyncIterator) {
   }
 }
 
-
 function createNewRepo(repo) {
   return {
     name: repo.name,
     owner: repo.owner.login,
-    updated_at: repo.updated_at,
+    updated_at: new Date(-8640000000000000).toGMTString(), // Guarentee that we get stats the first time
     stats: {
       codeFrequency: '',
       punchCard: '',
@@ -256,7 +252,6 @@ function createNewRepo(repo) {
     }
   };
 }
-
 
 // /**
 //  * ======= STEP 4 ========
@@ -269,41 +264,74 @@ function createNewRepo(repo) {
 //  * NOTE: All stats are stored as a stringified form
 //  */
 
+exports.getAllStats = function(org, next) {
+   async.each(org.members, getStatsForMember, goToNextStep);
 
+  function getStatsForMember(member, done) {
+    async.filter(member.repos, hasRepoBeenUpdated, function(updatedRepos) {
+      console.log(member.username, 'has', updatedRepos.length, 'recently updated repos.');
+      updatedRepos.forEach(function(repo){
+        console.log('getting stats for', repo.owner + '/' + repo.name);
+        getStatsForRepo(repo, done);
+      });
+    });
+  }
 
+  function goToNextStep(err) {
+    if (err) { next(err, null); }
+    else { utils.saveData(org, next); }
+  }
+};
 
-// function getRepoStats(org, callback) {
-//   console.log("github.getRepoStats called");
-//   var members = org.members;
-//   var completedRepos = 0;
+/* * *  STEP 4 HELPERS  * * */
 
-  
-//   members.forEach(function(member) {
-//     // Skip over any member that has no recently updated repos
-//     member.repos.length > 0 && member.repos.forEach(function(repo) {
-//       var options = {
-//         user: member.username,
-//         repo: repo.name,
-//       };
+function hasRepoBeenUpdated(repo, shouldBePushed){
+  var options = {
+    user: repo.owner,
+    repo: repo.name,
+    headers: {
+      // Preflight with update_at. If the repo hasn't been updated, the call will return with a 304 and not count against our rate limit
+      'If-Modified-Since': repo.updated_at
+    }
+  };
+  github.repos.get(options, function(err, results) {
+    console.log(repo.owner + '/' + repo.name + 'last updated:', repo.updated_at);
+    if (err){
+      console.log('error with repos.get', err);
+      shouldBePushed(false);
+    } else if (results.meta.status === '304 Not Modified') {
+      console.log(repo.owner + '/' + repo.name + 'status:', results.meta.status);
+      shouldBePushed(false);
+    } else {
+      console.log(repo.owner + '/' + repo.name + 'status:', results.meta.status);
+      console.log(repo.owner + '/' + repo.name + 'last-modified:', results.meta['last-modified']);
+      repo.updated_at = results.meta['last-modified']; // Update last modified date
+      shouldBePushed(true);
+    }
+  });
+}
 
-//       // Get codeFrequency stats
-//       github.repos.getStatsCodeFrequencyAsync(options)
-//       .then(function(stats) {
-//         console.log("repo found! got codeFrequency for member ", member.username, " and repo ", repo.name);
-//         repo.stats.codeFrequency = stats;
-//       });
+function getStatsForRepo(repo, done) {
+  var options = {
+    user: repo.owner,
+    repo: repo.name
+  };
 
-//       // Get punchCard stats
-//       github.repos.getStatsPunchCardAsync(options)
-//       .then(function(stats) {
-//         console.log("repo found! got punchCard for member ", member.username, " and repo ", repo.name);
-//         repo.stats.punchCard = stats;
-//         console.log("number of completed requests down: ", completedRepos + 1);
-//         // Save data to mongo when all recently updated repos have been accounted for
-//         if (++completedRepos === org.recentlyUpdatedRepoCount) {
-//           utils.saveDataToMongo(org, callback);
-//         }
-//       });
-//     });
-//   });
-// }
+  github.repos.getStatsCodeFrequency(options, function(err, stats) {
+    if (err) {
+      console.log('Error getting codeFrequency');
+      done(null);
+    } else {
+      repo.codeFrequency = stats;
+      github.repos.getStatsPunchCard(options, function(err, stats) {
+        if (err) {
+          console.log('Error getting punchCard');
+        } else {
+          repo.punchCard = stats;
+        }
+        done(null);
+      });
+    }
+  });
+}
+
