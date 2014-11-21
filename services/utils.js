@@ -14,7 +14,7 @@ exports.saveData = function(doc, next) {
       next('Error saving data to mongo', null);
     }
     else {
-      console.log("All data saved to mongo! ", numberAffected, " entries affected. (1 = worked). Moving on to next step..");
+      console.log("All data saved to mongo! ", numberAffected, " entries affected. Moving on to next step..");
       next(null, doc);
     }
   });
@@ -22,7 +22,7 @@ exports.saveData = function(doc, next) {
 
 exports.queryDatabase = function(query, callback) {
   console.log('--- Calling queryDatabase ---');
-  // Because of the way mongo works, the result will always be an organization here. Maybe rethink this as it can get wicked ineffienct
+  // Mongo will always return an organization here. This isn't effecient for querying nested documents (i.e. repos)
   Organization.findOne(query, function(err, org) {
     if (err) {
       callback(err, null);
@@ -30,7 +30,7 @@ exports.queryDatabase = function(query, callback) {
       console.log('At least one result found from query!');
       callback(null, org);
     } else {
-      console.log('Zero results found from query'); // Verbose logging
+      console.log('Zero results found from query');
       callback(null, org);
     }
   });
@@ -38,11 +38,9 @@ exports.queryDatabase = function(query, callback) {
 
 // Runs the same GitHub API call passed in as the first argument while there's still more pages to get then runs the callback on an array of all results
 exports.paginateAndPush = function(githubCall, options, callback) {
-  console.log('--- Calling paginateAndPush---');
   var result = [];
 
   (function paginate(page) {
-    console.log('--- Calling paginate for page --', page, '---');
     // Add the current page number to our options
     options.page = page;
     githubCall(options, function(err, data) {
@@ -54,7 +52,7 @@ exports.paginateAndPush = function(githubCall, options, callback) {
 
       var hasNextPage = github.hasNextPage(data.meta.link); // Handy method provided in our API
       
-      // Combine results only if modified
+      // Combine results only if modified. Maybe unnecessary
       if (data.meta.status !== '304 Not Modified') {
         result = result.concat(data);
       }

@@ -15,17 +15,6 @@ github.authenticate({
   token: secret.githubToken
 });
 
-// // TEST
-// var options = {user: 'asdlkfjasdfdf'};
-// utils.paginateAndPush(github.repos.getFromUser, options, function(err, repos) {
-//   if (err) {
-//     console.log('Error getting scraping all data: ',err);
-//   } else {
-//     console.log("Got all github data! Woo!");
-//   }
-//   console.log("Shutting down...");
-// });
-
 
 /**
  * ======= STEP 1 ========
@@ -114,9 +103,6 @@ function getMembersForOrg(org, next) {
       console.log('Error getting data from github', error);
       next(err, null);
     }
-
-    console.log('Got all members!');
-
     // Update our entries if there are any new members
     if (membersHaveChanged(org, allMembers)) {
       console.log('New members found! Adding them...');
@@ -128,7 +114,6 @@ function getMembersForOrg(org, next) {
   });
 }
 
-// Maybe there's some more logic here. It's kind of dumb right now
 function membersHaveChanged(org, members) {
   return org.members.length !== members.length;
 }
@@ -186,7 +171,7 @@ exports.getAllRepos = function(org, next) {
 /* * *  STEP 3 HELPERS  * * */
 
 // async.each iterator. Expects a callback as the second argument that must be called either with an error if there was one or null once the iteration is done
-function getReposForMember(member, doneWithAsyncIterator) {
+function getReposForMember(member, done) {
   var options = {
     user: member.username,
     per_page: 100,
@@ -199,52 +184,57 @@ function getReposForMember(member, doneWithAsyncIterator) {
   // Reurns with an empty array if etag was the same, or all repos for a user
   utils.paginateAndPush(github.repos.getFromUser, options, function(err, repos) {
     if (err) {
-      console.log('Error getting data from github', err);
-      // If I pass along the err here, it will bubble all the way out and stop everything. Right now I'm just skipping over it. Is there a better way to do this?
-      doneWithAsyncIterator(null);
-
+      console.log('Error getting repos data from github', err);
+      done(null);
+    } else if (repos.length) {
+      console.log('Etag changed for', member.username,'! Checking if any of the returned repos are new..');
+      member.etag = repos.meta.etag; // Update etag
+      addNewReposToMember(member, repos, done);
     } else {
-      console.log('Got all repos for member', member.username);
-      // Update our entries if there are any new repos
-      if (repos.length) {
-        console.log('Etag changed! Checking if any of them returned repos are new for', member.username);
-        member.etag = repos.meta.etag; // Update etag
-        addNewReposToMember(member, repos, doneWithAsyncIterator);
-      } else {
-        console.log('No new repos, moving on to next user');
-        doneWithAsyncIterator(null);
-      }
+      console.log('No new repos for', member.username, 'moving on to next user');
+      done(null);
     }
   });
 }
 
-function addNewReposToMember(member, repos, doneWithAsyncIterator) {
-  // This is a really slow filter process right now
-  async.filter(repos, isNewRepo, function(newRepos) {
+function addNewReposToMember(member, repos, done) {
+  async.filter(repos, isNewAndCurrentRepo, function(newRepos) {
     console.log('newRepos for', member.username, 'back from filter:', newRepos.length);
+    
     // newRepos is now only those that didn't exist before in our database
     newRepos.forEach(function(repo) {
       console.log('adding new repo:', repo.owner.login + '/' + repo.name);
       member.repos.push(createNewRepo(repo));
     });
-    doneWithAsyncIterator(null); // Let async.each know we're done with this iteration
+
+    // Let async.each know we're done with this iteration
+    done(null);
   });
 
-  // async.filter test function
-  function isNewRepo(repo, shouldBePushed) {
+  function isNewAndCurrentRepo(repo, shouldBePushed) {
+    // Added isCurrent to avoid maxing out calls on initial scrape
+    var isCurrent = hasBeenUpdatedInLastMonth(repo);
     var isNew = member.repos.every(function(existingRepo) {
       return existingRepo.name !== repo.name;
     });
-    console.log(repo.name,'is new?',isNew);
-    isNew ? shouldBePushed(true) : shouldBePushed(false);
+
+    isNew && isCurrent? shouldBePushed(true) : shouldBePushed(false);
   }
+}
+
+function hasBeenUpdatedInLastMonth(repo) {
+  var today = new Date();
+  var lastMonth = today.setMonth(today.getMonth() - 1);
+  var lastUpdated = new Date(repo.updated_at);
+  return lastUpdated > lastMonth;
 }
 
 function createNewRepo(repo) {
   return {
     name: repo.name,
     owner: repo.owner.login,
-    updated_at: new Date(-8640000000000000).toGMTString(), // Guarentee that we get stats the first time
+    // Guarentee that the first comparison is true by being later than 271,821 B.C.
+    updated_at: new Date(-8640000000000000).toGMTString(),
     stats: {
       codeFrequency: '',
       punchCard: '',
@@ -268,12 +258,19 @@ exports.getAllStats = function(org, next) {
    async.each(org.members, getStatsForMember, goToNextStep);
 
   function getStatsForMember(member, done) {
-    async.filter(member.repos, hasRepoBeenUpdated, function(updatedRepos) {
+    async.filter(member.repos, hasBeenUpdatedSinceLastScrape, function(updatedRepos) {
       console.log(member.username, 'has', updatedRepos.length, 'recently updated repos.');
-      updatedRepos.forEach(function(repo){
-        console.log('getting stats for', repo.owner + '/' + repo.name);
-        getStatsForRepo(repo, done);
-      });
+      if (updatedRepos.length) {
+        async.each(updatedRepos, getStatsForRepo, function(err){
+          console.log('Finished getting all stats for ', member.username);
+          if (err) {
+            console.log("Error getting all stats", err);
+          }
+          done(null);
+        });
+      } else {
+        done(null);
+      }
     });
   }
 
@@ -285,7 +282,8 @@ exports.getAllStats = function(org, next) {
 
 /* * *  STEP 4 HELPERS  * * */
 
-function hasRepoBeenUpdated(repo, shouldBePushed){
+// async.filter callback
+function hasBeenUpdatedSinceLastScrape(repo, shouldBePushed){
   var options = {
     user: repo.owner,
     repo: repo.name,
@@ -295,17 +293,14 @@ function hasRepoBeenUpdated(repo, shouldBePushed){
     }
   };
   github.repos.get(options, function(err, results) {
-    console.log(repo.owner + '/' + repo.name + 'last updated:', repo.updated_at);
     if (err){
       console.log('error with repos.get', err);
       shouldBePushed(false);
     } else if (results.meta.status === '304 Not Modified') {
-      console.log(repo.owner + '/' + repo.name + 'status:', results.meta.status);
       shouldBePushed(false);
     } else {
-      console.log(repo.owner + '/' + repo.name + 'status:', results.meta.status);
-      console.log(repo.owner + '/' + repo.name + 'last-modified:', results.meta['last-modified']);
-      repo.updated_at = results.meta['last-modified']; // Update last modified date
+      // Update last modified date
+      repo.updated_at = results.meta['last-modified'];
       shouldBePushed(true);
     }
   });
@@ -319,19 +314,20 @@ function getStatsForRepo(repo, done) {
 
   github.repos.getStatsCodeFrequency(options, function(err, stats) {
     if (err) {
-      console.log('Error getting codeFrequency');
+      console.log('Error getting codeFrequency', err);
       done(null);
-    } else {
-      repo.codeFrequency = stats;
-      github.repos.getStatsPunchCard(options, function(err, stats) {
-        if (err) {
-          console.log('Error getting punchCard');
-        } else {
-          repo.punchCard = stats;
-        }
-        done(null);
-      });
     }
+    console.log('got codeFrequency for', repo.owner + '/' + repo.name);
+    repo.codeFrequency = stats;
+    github.repos.getStatsPunchCard(options, function(err, stats) {
+      if (err) {
+        console.log('Error getting punchCard', err);
+      } else {
+        repo.punchCard = stats;
+        console.log('got punchCard for', repo.owner + '/' + repo.name);
+      }
+      done(null);
+    });
   });
 }
 
