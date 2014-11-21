@@ -10,14 +10,14 @@ mongoose.connection.on('error', function() {
 });
 
 // Run block - Compose our steps and run it
-var testMe = async.seq(
+var scrapeGitHub = async.seq(
   github.getOrganization,
   github.getAllMembers,
   github.getAllRepos,
   github.getAllStats
 );
 
-testMe('hackreactor', function(err, results) {
+scrapeGitHub('hackreactor', function(err, results) {
   if (err) {
     console.log('Error getting scraping all data: ',err);
   } else {

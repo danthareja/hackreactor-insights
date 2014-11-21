@@ -15,6 +15,9 @@ github.authenticate({
   token: secret.githubToken
 });
 
+// github.repos.getStatsPunchCard({user:'danthareja', repo:'hackreactor-code-visual'}, function(err, stats) {
+//     console.log(stats)
+// })
 
 /**
  * ======= STEP 1 ========
@@ -318,12 +321,12 @@ function getStatsForRepo(repo, done) {
       done(null);
     }
     console.log('got codeFrequency for', repo.owner + '/' + repo.name);
-    repo.codeFrequency = stats;
+    repo.stats.codeFrequency = JSON.stringify(stats);
     github.repos.getStatsPunchCard(options, function(err, stats) {
       if (err) {
         console.log('Error getting punchCard', err);
       } else {
-        repo.punchCard = stats;
+        repo.stats.punchCard = JSON.stringify(stats);
         console.log('got punchCard for', repo.owner + '/' + repo.name);
       }
       done(null);
