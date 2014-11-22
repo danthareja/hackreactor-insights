@@ -295,9 +295,12 @@ function getStatsForRepo(repo, done) {
       repo.stats.punchCard = JSON.stringify(stats);
       console.log('got punchCard for', repo.owner + '/' + repo.name);
       done(null);
+    })
+    .catch(function(){
+      done(null);
     });
   })
-  .catch(function(err) {
+  .catch(function() {
     done(null);
   });
 }
