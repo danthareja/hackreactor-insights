@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "npm install -g bower && bower install && node services/githubScraper.js"
+    "postinstall": "npm install -g bower && bower install"
   },
   "author": "danthareja (danthareja@gmail.com)",
   "license": "MIT",
