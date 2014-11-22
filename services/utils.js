@@ -7,16 +7,17 @@ var github = new GitHubApi({
   version: "3.0.0"
 });
 
-exports.saveData = function(model, next) {
+exports.saveData = function(model, resolve, reject) {
   console.log('--- Calling saveData ---');
-  model.save(function(err, user, numberAffected) {
+  model.save(function(err, model, numberAffected) {
+    console.log("numberAffected", numberAffected);
     if (err) {
       console.log("Error saving data to mongo", err);
-      next(err, null);
+      reject(err);
     }
     else {
       console.log("All data saved to mongo! ", numberAffected, " entries affected. Moving on to next step..");
-      next(null, model);
+      resolve(model);
     }
   });
 };
@@ -28,7 +29,7 @@ exports.paginateAndPush = function(githubRequest, options) {
     (function paginate(page) {
       var hasNextPage;
 
-      // Add the current page number to our options
+      // Add the current page number to our API options
       options.page = page;
 
       githubRequest(options, function(err, data) {
@@ -43,7 +44,7 @@ exports.paginateAndPush = function(githubRequest, options) {
         result = result.concat(data);
 
         if(!hasNextPage) {
-          // Gives us access to the meta outside of paginate
+          // Gives us access to the metadata outside of paginate
           result.meta = data.meta;
           // When there's no more pages, resolve our promise with the collection of all data
           resolve(result);

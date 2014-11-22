@@ -1,6 +1,6 @@
 var Promise = require("bluebird");
-var async = require("async");
 var mongoose = Promise.promisifyAll(require("mongoose"));
+var async = require("async");
 var secret = require("../config/secret");
 var github = require("./githubScraperHelpers");
 
@@ -10,20 +10,16 @@ mongoose.connection.on('error', function() {
   console.error('MongoDB Connection Error. Make sure MongoDB is running.');
 });
 
-// Run block - Compose our steps and run it
-var scrapeGitHub = async.seq(
-  github.getOrganization,
-  github.getAllMembers,
-  github.getAllRepos,
-  github.getAllStats
-);
+// Run our helper methods
+github.getOrganization('hackreactor')
+.then(github.getAllMembers)
+.then(github.getAllRepos)
+.then(github.getAllStats)
+.then(github.logSuccess)
+.then(closeMongoose);
 
-scrapeGitHub('hackreactor', function(err, results) {
-  if (err) {
-    console.log('Error getting scraping all data: ',err);
-  } else {
-    console.log("Got all github data! Woo!");
-  }
-  console.log("Closing down mongo...");
+function closeMongoose(org) {
+  console.log("Got all github data for", org.username, "! Woo!");
+  console.log("Closing mongoose..");
   mongoose.connection.close();
-});
+}

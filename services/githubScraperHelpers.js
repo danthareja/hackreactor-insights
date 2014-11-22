@@ -1,7 +1,7 @@
 var async = require("async");
 var secret = require("../config/secret");
 var utils = require("./utils");
-var GitHubApi = require("github"); // Extended this to add the stats I needed. (https://github.com/mikedeboer/node-github/pull/207)
+var GitHubApi = require("github"); // Extended this to add stats routes. Yay opensource! (https://github.com/mikedeboer/node-github/pull/207)
 var Organization = require("../models/Organization");
 var Promise = require("bluebird");
 
@@ -19,34 +19,38 @@ github.authenticate({
 Promise.promisifyAll(github.orgs);
 Promise.promisifyAll(github.repos);
 
-/**
- * ======= STEP 1 ========
- *
- * Get organization. If the organization does not yet exist in the database, 
- * grab its info from GitHub and create a new entry in the database.
- *
- * Passes an Organization object to the next step
- */
 
-exports.getOrganization = function(name, next) {
+/**********************************************************************************
+ *                                  STEP 1                                        *
+ *                                                                                *
+ * Get organization.                                                              *
+ * Grab data from GitHub and create new entry if organization does not exist yet  *
+ *                                                                                *
+ * Resolves with an organization Object.                                          *
+ **********************************************************************************/
+
+
+exports.getOrganization = function(name) {
   console.log('--- Calling getOrganization for', name, '---');
-  var query = { username: name };
-  Organization.findOneAsync(query)
-  .then(function(org) {
-    org ? next(null, org) : addNewOrganization(name, next);
+  return new Promise(function(resolve, reject) {
+    var query = { username: name };
+    Organization.findOneAsync(query)
+    .then(function(org) {
+      org ? resolve(org) : addNewOrganization(name, resolve, reject);
+    });
   });
 };
 
-/* * *  STEP 1 HELPERS  * * */
+/* * * * * * * * * * * * * * * * STEP 1 HELPERS * * * * * * * * * * * * * * * * * */
 
-function addNewOrganization(name, next) {
+function addNewOrganization(name, resolve, reject) {
   console.log('--- Calling addNewOrganization for', name, '---');
   var options = { org: name };
   github.orgs.getAsync(options)
   .then(function(org) {
     console.log('Results returned from github.org.get', org.login);
     var newOrg = createNewOrganization(org);
-    utils.saveData(newOrg, next);
+    utils.saveData(newOrg, resolve, reject);
   });
 }
 
@@ -69,44 +73,45 @@ function createNewOrganization(org) {
   });
 }
 
-/**
- * ======= STEP 2 ========
- *
- * Get organization members. This will use the organization passed in from step 1 and
- * grab all members associated with the organization from GitHub. If the organization members have changes
- * we will also update them in the database
- *
- * Passes an Organization object to the next step
- */
 
-exports.getAllMembers = function(org, next) {
+/**********************************************************************************
+ *                                  STEP 2                                        *
+ *                                                                                *
+ * Get all members associated with the organization from GitHub.                  *
+ * If the organization members have changed at all, we will add the new ones.     *
+ *                                                                                *
+ * Resolves with an organization Object.                                          *
+ **********************************************************************************/
+
+
+exports.getAllMembers = function(org) {
   console.log('--- Calling getAllMembers for', org.username, '---');
-  var options = { org: org.username , per_page: 100 };
+  return new Promise(function(resolve, reject) {
+    var options = { org: org.username , per_page: 100 };
 
-  utils.paginateAndPush(github.orgs.getMembers, options)
-  .then(function(allMembers){
-    // Update our entries if there are any new members
-    if (membersHaveChanged(org, allMembers)) {
-      console.log('New members found! Adding them...');
-      updateMembers(org, allMembers, next);
-    } else {
-      console.log('No new members, moving on to step 3...');
-      next(null, org);
-    }
+    utils.paginateAndPush(github.orgs.getMembers, options)
+    .then(function(allMembers){
+      console.log('Got all members', allMembers.length);
+      if (membersHaveChanged(org, allMembers)) {
+        console.log('New members found! Adding them...');
+        updateMembers(org, allMembers, resolve, reject);
+      } else {
+        console.log('No new members, moving on to step 3...');
+        resolve(org);
+      }
+    });
   });
 };
 
-/* * *  STEP 2 HELPERS  * * */
+/* * * * * * * * * * * * * * * * STEP 2 HELPERS * * * * * * * * * * * * * * * * * */
 
 function membersHaveChanged(org, members) {
   return org.members.length !== members.length;
 }
 
-function updateMembers(org, members, next) {
+function updateMembers(org, members, resolve, reject) {
   async.filter(members, isNewMember, addNewMembers);
 
-  // async.filter test function. Requires a callback as the second argument, if true is passed
-  // into the callback, the item is added to the filtered array, if false is passed into the callback, the item is left out of the filtered array
   function isNewMember(member, shouldBePushed) {
     var isNew = org.members.every(function(existingMember) {
       return existingMember.username !== member.login;
@@ -116,54 +121,56 @@ function updateMembers(org, members, next) {
   }
 
   function addNewMembers(newMembers) {
-    console.log('newMembers back from filter: ', newMembers);
-    // newMembers now only contain those that didn't exist before in our database
+    console.log('newMembers back from filter: ', newMembers.length);
     newMembers.forEach(createNewMember);
-    utils.saveData(org, next);
+    utils.saveData(org, resolve, reject);
+  }
+
+  function createNewMember(member) {
+    var newMember = {
+      username: member.login,
+      repos: []
+    };
+    console.log('adding new member:', member.login);
+    org.members.push(newMember);
   }
 }
 
-function createNewMember(member) {
-  var newMember = {
-    username: member.login,
-    repos: []
-  };
-  console.log('adding new member:', member.login);
-  org.members.push(newMember);
-}
 
-/**
- * ======= STEP 3 ========
- *
- * Get member repos. This will use the organization passed in from step 2 and
- * get all repos associated with all members in the organization
- *
- * Passes an Organization object to the next step
- */
+/**********************************************************************************
+ *                                  STEP 3                                        *
+ *                                                                                *
+ * Get all repos for each member in the organization.                             *
+ * Preflight calls with 'If-None-Match' header to avoid rate limits.              *
+ * Only saves repos that have been updated in the last month.                     *
+ *                                                                                *
+ * Resolves with an organization Object.                                          *
+ **********************************************************************************/
 
-exports.getAllRepos = function(org, next) {
-  async.each(org.members, getReposForMember, goToNextStep);
 
-  function goToNextStep(err) {
-    err ? next(err, null) : utils.saveData(org, next);
-  }
+exports.getAllRepos = function(org) {
+  return new Promise(function(resolve, reject) {
+    async.each(org.members, getReposForMember, goToNextStep);
+
+    function goToNextStep(err) {
+      err ? reject(err) : utils.saveData(org, resolve, reject);
+    }
+  });
 };
 
-/* * *  STEP 3 HELPERS  * * */
+/* * * * * * * * * * * * * * * * STEP 3 HELPERS * * * * * * * * * * * * * * * * * */
 
-// async.each iterator
 function getReposForMember(member, done) {
   var options = {
     user: member.username,
     per_page: 100,
     headers: {
-      // Preflight with an etag. If the etag hasn't changed, the call will return with a 304 and not count against our rate limit
+      // Will return with a 304 and not count against our rate limit if no changes
       'If-None-Match': member.etag
     }
   };
 
   utils.paginateAndPush(github.repos.getFromUser, options)
-  // Returns with an empty array if etag was the same, or all repos for a user
   .then(function(repos) {
     if (repos.length) {
       console.log('Etag changed for', member.username,'! Checking if any of the returned repos are new..');
@@ -219,27 +226,28 @@ function hasBeenUpdatedInLastMonth(repo) {
 }
 
 
+/**********************************************************************************
+ *                                  STEP 4                                        *
+ *                                                                                *
+ * Get all stats for each repos associated for every member.                      *
+ * GitHub returns cached stats. Might have to call twice the first time.          *
+ * All stats are stringified before storage.                                      *
+ *                                                                                *
+ * Resolves with an organization Object.                                          *
+ **********************************************************************************/
 
-/**
- * ======= STEP 4 ========
- *
- * Goes through each repo in the org's members array and gets all stats associated with each repo
- * Stores all stats in org.members.[[member]].[[repo]].stats array in mongo
- * 
- * This is an expensive call so Github only returns archived data
- * We have to make the calls twice in order to make sure they are archived. (There's got to be a better way)
- * NOTE: All stats are stored as a stringified form
- */
 
-exports.getAllStats = function(org, next) {
- async.each(org.members, getStatsForMember, goToNextStep);
+exports.getAllStats = function(org) {
+  return new Promise(function(resolve, reject) {
+   async.each(org.members, getStatsForMember, goToNextStep);
 
-  function goToNextStep(err) {
-    err ? next(err, null) : utils.saveData(org, next);
-  }
+    function goToNextStep(err) {
+      err ? reject(err) : utils.saveData(org, resolve, reject);
+    }
+  });
 };
 
-/* * *  STEP 4 HELPERS  * * */
+/* * * * * * * * * * * * * * * * STEP 4 HELPERS * * * * * * * * * * * * * * * * * */
 
 function getStatsForMember(member, done) {
   async.filter(member.repos, hasChangedSinceLastScrape, updateStats);
