@@ -1,5 +1,6 @@
+var Promise = require("bluebird");
 var async = require("async");
-var mongoose = require("mongoose");
+var mongoose = Promise.promisifyAll(require("mongoose"));
 var secret = require("../config/secret");
 var github = require("./githubScraperHelpers");
 
