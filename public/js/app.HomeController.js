@@ -28,6 +28,35 @@ angular.module("hrStats").controller("HomeController", function($scope, $statePa
     },0);
   };
 
+  $scope.numberWithCommas = function(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
+  $scope.additionsMap = function(num) {
+    var map = {
+      0: "",
+      10000: "a simple iPhone game",
+      40000: "a photo editing iPhone app",
+      80000: "a pacemaker",
+      120000: "Photoshop v1 (1990)",
+      200000: "Camino (an entire web browser)",
+      310000: "the Quake 3 game engine",
+      400000: "a Space Shuttle",
+      1000000: "War And Peace x 14, Ulysses x 25, The Catcher in The Rye x 63",
+      1000000: "Crysis",
+      1200000: "Age of Empires Online",
+      1700000: "F-22 Raptor",
+      2000000: "the Hubble Space Telescope"
+    };
+
+    // Get number of line in map closest to input num
+    var lines = Object.keys(map).reduce(function(closest, current){
+      return num > current ? current : closest;
+    }, 0);
+
+    return map[lines];
+  };
+
   $scope.numberToDay = function(num){
     var days = {
       0 : 'Sunday',
@@ -57,6 +86,7 @@ angular.module("hrStats").controller("HomeController", function($scope, $statePa
   $scope.mostAdditions = getMost('additions', codeFrequency);
   $scope.mostDeletions = getMost('deletions', codeFrequency);
   $scope.mostNetLines = getMost('net', codeFrequency);
+  $scope.averageAdditions = Math.floor($scope.totalAdditions / 152); // Hardedcoded for now. Sorry future Dan.
 
   // Put in proper format so we can use the same helper function
   var commitsPerDay = punchCard.reduce(function(result, punchCard) {
@@ -80,7 +110,6 @@ angular.module("hrStats").controller("HomeController", function($scope, $statePa
 
   $scope.mostProductiveDay = getMost('commits', commitsPerDay);
   $scope.leastProductiveDay = getLeast('commits', commitsPerDay);
-
   $scope.mostProductiveHour = getMost('commits', punchCard);
   $scope.leastProductiveHour = getLeast('commits', punchCard);
 
@@ -89,7 +118,7 @@ angular.module("hrStats").controller("HomeController", function($scope, $statePa
     $scope.insight = $scope.insight === 4 ? 0 : $scope.insight + 1;
   };
   $scope.insight = 0;
-  $interval(nextInsight, 5000);
+  $interval(nextInsight, 4000);
 
 });
 

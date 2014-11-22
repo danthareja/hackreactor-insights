@@ -17,6 +17,7 @@ exports.getOrganization = function(req, res, next) {
   console.log('getting organization data for ', org);
   // Check to see if organization already exists in our db and create a new one if not
   Organization.findOne({ username: org }, function(err, existingOrg) {
+    console.log("length:", existingOrg.members.length)
     if (existingOrg) {
       req.org = existingOrg; // Pass on reference to the existing org
       next();
@@ -42,7 +43,6 @@ exports.getCodeFrequency = function(req, res) {
 
   filtered.forEach(function(member) {
     member.repos.forEach(function(repo) {
-      console.log('stats:', repo.stats.codeFrequency);
       parseStats(repo.stats.codeFrequency).forEach(function(stat) {
         // console.log("repo: ", repo.name, "date: ", stat[0]);
         // codeFrequency stats come in tuples [date, additions, deletions]
