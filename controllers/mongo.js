@@ -1,6 +1,4 @@
-/**
- * Helper functions 
- */
+var Organization = require("../models/Organization");
 
 // Parses stringified stats and makes dates usable by javascript
 var parseStats = function(statString) {
@@ -13,42 +11,18 @@ var parseStats = function(statString) {
   return Array.isArray(stats) ? stats : [];
 };
 
-// Middleware to get the requested org
+// Middleware to get the requested org from mongo
 exports.getOrganization = function(req, res, next) {
   org = req.query.org || 'hackreactor'; // Allow users to send custom org over query string
   console.log('getting organization data for ', org);
-
-  authenticate();
-
-  github.orgs.getAsync({ org: org, per_page: 100})
-  .then(function(org) {
-    // Check to see if organization already exists in our db and create a new one if not
-    Organization.findOne({ login: org.login }, (function(err, existingOrg) {
-      if (existingOrg) {
-        req.org = existingOrg; // Pass on reference to the existing org
-        next();
-      } else {
-        // Maybe req.send 'no data found for this??'
-        var newOrg = new Organization();
-        newOrg.login = org.login;
-        newOrg.profile.name = org.name;
-        newOrg.profile.url = org.html_url;
-        newOrg.profile.avatar = org.avatar_url;
-        newOrg.profile.location = org.location;
-        newOrg.profile.email = org.email;
-        newOrg.profile.public_repos = org.public_repos;
-        newOrg.profile.public_gists = org.public_gists;
-        newOrg.profile.followers = org.followers;
-        newOrg.profile.following = org.following;
-        newOrg.profile.created_at = org.created_at;
-        newOrg.profile.updated_at = org.updated_at;
-        newOrg.save(function(err) {
-          console.log("saving new org", newOrg.name);
-          req.org = newOrg; // Pass on reference to the new org
-          next();
-        });
-      }
-    }));
+  // Check to see if organization already exists in our db and create a new one if not
+  Organization.findOne({ username: org }, function(err, existingOrg) {
+    if (existingOrg) {
+      req.org = existingOrg; // Pass on reference to the existing org
+      next();
+    } else {
+      res.send(404);
+    }
   });
 };
 
@@ -68,6 +42,7 @@ exports.getCodeFrequency = function(req, res) {
 
   filtered.forEach(function(member) {
     member.repos.forEach(function(repo) {
+      console.log('stats:', repo.stats.codeFrequency);
       parseStats(repo.stats.codeFrequency).forEach(function(stat) {
         // console.log("repo: ", repo.name, "date: ", stat[0]);
         // codeFrequency stats come in tuples [date, additions, deletions]

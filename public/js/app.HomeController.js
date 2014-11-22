@@ -2,7 +2,7 @@
  * controller: HomeController - handles all visualization and insights on homepage
  */
 
-angular.module("hrStats").controller("HomeController", function($scope, $stateParams, punchCard, codeFrequency) {
+angular.module("hrStats").controller("HomeController", function($scope, $stateParams, $interval, punchCard, codeFrequency) {
   console.log("-------- data inside home controller --------");
   console.log("state params: ", $stateParams);
   console.log("punch: ", punchCard);
@@ -83,5 +83,13 @@ angular.module("hrStats").controller("HomeController", function($scope, $statePa
 
   $scope.mostProductiveHour = getMost('commits', punchCard);
   $scope.leastProductiveHour = getLeast('commits', punchCard);
+
+  // Cycle through insights
+  var nextInsight = function() {
+    $scope.insight = $scope.insight === 4 ? 0 : $scope.insight + 1;
+  };
+  $scope.insight = 0;
+  $interval(nextInsight, 5000);
+
 });
 
