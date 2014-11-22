@@ -3,6 +3,7 @@ var secret = require("../config/secret");
 var utils = require("./utils");
 var GitHubApi = require("github"); // Extended this to add the stats I needed. (https://github.com/mikedeboer/node-github/pull/207)
 var Organization = require("../models/Organization");
+var Promise = require("bluebird");
 
 // Instantiate API
 var github = new GitHubApi({
@@ -15,9 +16,8 @@ github.authenticate({
   token: secret.githubToken
 });
 
-// github.repos.getStatsPunchCard({user:'danthareja', repo:'hackreactor-code-visual'}, function(err, stats) {
-//     console.log(stats)
-// })
+Promise.promisifyAll(github.orgs);
+Promise.promisifyAll(github.repos);
 
 /**
  * ======= STEP 1 ========
@@ -30,36 +30,23 @@ github.authenticate({
 
 exports.getOrganization = function(name, next) {
   console.log('--- Calling getOrganization for', name, '---');
-  checkIfOrganizationExists(name, function(err, existingOrg) {
-    if (err) {
-      next(err, null);
-    } else if (existingOrg) {
-      next(null, existingOrg); // Move to step 2
-    } else {
-      addNewOrganization(name, next);
-    }
+  var query = { username: name };
+  Organization.findOneAsync(query)
+  .then(function(org) {
+    org ? next(null, org) : addNewOrganization(name, next);
   });
 };
 
 /* * *  STEP 1 HELPERS  * * */
 
-function checkIfOrganizationExists(name, callback) {
-  console.log('--- Calling checkIfOrganizationExists for', name, '---');
-  var query = { username: name };
-  utils.queryDatabase(query, callback);
-}
-
 function addNewOrganization(name, next) {
   console.log('--- Calling addNewOrganization for', name, '---');
   var options = { org: name };
-  github.orgs.get(options, function(err, org) {
-    if (err) {
-      next(err, null);
-    } else {
-      console.log('Results returned from github.org.get', org.login);
-      var newOrg = createNewOrganization(org);
-      utils.saveData(newOrg, next);
-    }
+  github.orgs.getAsync(options)
+  .then(function(org) {
+    console.log('Results returned from github.org.get', org.login);
+    var newOrg = createNewOrganization(org);
+    utils.saveData(newOrg, next);
   });
 }
 
@@ -94,45 +81,29 @@ function createNewOrganization(org) {
 
 exports.getAllMembers = function(org, next) {
   console.log('--- Calling getAllMembers for', org.username, '---');
-  getMembersForOrg(org, next);
-};
-
-/* * *  STEP 2 HELPERS  * * */
-
-function getMembersForOrg(org, next) {
   var options = { org: org.username , per_page: 100 };
-  utils.paginateAndPush(github.orgs.getMembers, options, function(err, allMembers) {
-    if (err) {
-      console.log('Error getting data from github', error);
-      next(err, null);
-    }
+
+  utils.paginateAndPush(github.orgs.getMembers, options)
+  .then(function(allMembers){
     // Update our entries if there are any new members
     if (membersHaveChanged(org, allMembers)) {
       console.log('New members found! Adding them...');
-      addNewMembers(org, allMembers, next);
+      updateMembers(org, allMembers, next);
     } else {
       console.log('No new members, moving on to step 3...');
-      next(null, org); // Move to step 3
+      next(null, org);
     }
   });
-}
+};
+
+/* * *  STEP 2 HELPERS  * * */
 
 function membersHaveChanged(org, members) {
   return org.members.length !== members.length;
 }
 
-function addNewMembers(org, members, next) {
-  async.filter(members, isNewMember, function(newMembers) {
-    console.log('newMembers back from filter: ', newMembers);
-
-    // newMembers now only contain those that didn't exist before in our database
-    newMembers.forEach(function(member) {
-      console.log('adding new member:', member.login);
-      org.members.push(createNewMember(member));
-    });
-
-    utils.saveData(org, next); // Save new members and move on to step 3
-  });
+function updateMembers(org, members, next) {
+  async.filter(members, isNewMember, addNewMembers);
 
   // async.filter test function. Requires a callback as the second argument, if true is passed
   // into the callback, the item is added to the filtered array, if false is passed into the callback, the item is left out of the filtered array
@@ -143,14 +114,22 @@ function addNewMembers(org, members, next) {
     console.log(member.login,'is new?',isNew);
     isNew ? shouldBePushed(true) : shouldBePushed(false);
   }
+
+  function addNewMembers(newMembers) {
+    console.log('newMembers back from filter: ', newMembers);
+    // newMembers now only contain those that didn't exist before in our database
+    newMembers.forEach(createNewMember);
+    utils.saveData(org, next);
+  }
 }
 
-
 function createNewMember(member) {
-  return {
+  var newMember = {
     username: member.login,
     repos: []
   };
+  console.log('adding new member:', member.login);
+  org.members.push(newMember);
 }
 
 /**
@@ -166,14 +145,13 @@ exports.getAllRepos = function(org, next) {
   async.each(org.members, getReposForMember, goToNextStep);
 
   function goToNextStep(err) {
-    if (err) { next(err, null); }
-    else { utils.saveData(org, next); }
+    err ? next(err, null) : utils.saveData(org, next);
   }
 };
 
 /* * *  STEP 3 HELPERS  * * */
 
-// async.each iterator. Expects a callback as the second argument that must be called either with an error if there was one or null once the iteration is done
+// async.each iterator
 function getReposForMember(member, done) {
   var options = {
     user: member.username,
@@ -184,15 +162,13 @@ function getReposForMember(member, done) {
     }
   };
 
-  // Reurns with an empty array if etag was the same, or all repos for a user
-  utils.paginateAndPush(github.repos.getFromUser, options, function(err, repos) {
-    if (err) {
-      console.log('Error getting repos data from github', err);
-      done(null);
-    } else if (repos.length) {
+  utils.paginateAndPush(github.repos.getFromUser, options)
+  // Returns with an empty array if etag was the same, or all repos for a user
+  .then(function(repos) {
+    if (repos.length) {
       console.log('Etag changed for', member.username,'! Checking if any of the returned repos are new..');
       member.etag = repos.meta.etag; // Update etag
-      addNewReposToMember(member, repos, done);
+      updateReposForMember(member, repos, done);
     } else {
       console.log('No new repos for', member.username, 'moving on to next user');
       done(null);
@@ -200,28 +176,38 @@ function getReposForMember(member, done) {
   });
 }
 
-function addNewReposToMember(member, repos, done) {
-  async.filter(repos, isNewAndCurrentRepo, function(newRepos) {
-    console.log('newRepos for', member.username, 'back from filter:', newRepos.length);
-    
-    // newRepos is now only those that didn't exist before in our database
-    newRepos.forEach(function(repo) {
-      console.log('adding new repo:', repo.owner.login + '/' + repo.name);
-      member.repos.push(createNewRepo(repo));
-    });
-
-    // Let async.each know we're done with this iteration
-    done(null);
-  });
+function updateReposForMember(member, repos, done) {
+  async.filter(repos, isNewAndCurrentRepo, addNewAndCurrentRepos);
 
   function isNewAndCurrentRepo(repo, shouldBePushed) {
-    // Added isCurrent to avoid maxing out calls on initial scrape
     var isCurrent = hasBeenUpdatedInLastMonth(repo);
     var isNew = member.repos.every(function(existingRepo) {
       return existingRepo.name !== repo.name;
     });
 
     isNew && isCurrent? shouldBePushed(true) : shouldBePushed(false);
+  }
+
+  function addNewAndCurrentRepos(newRepos) {
+    console.log('newRepos for', member.username, 'back from filter:', newRepos.length);
+    newRepos.forEach(createNewRepo);
+    done(null);
+  }
+
+  function createNewRepo(repo) {
+    var newRepo = {
+      name: repo.name,
+      owner: repo.owner.login,
+      // Guarentee that the first comparison is true by being later than 271,821 B.C.
+      updated_at: new Date(-8640000000000000).toGMTString(),
+      stats: {
+        codeFrequency: '',
+        punchCard: '',
+        commitActivity: '',
+      }
+    };
+    console.log('adding new repo:', newRepo.owner + '/' + newRepo.name);
+    member.repos.push(newRepo);
   }
 }
 
@@ -232,61 +218,45 @@ function hasBeenUpdatedInLastMonth(repo) {
   return lastUpdated > lastMonth;
 }
 
-function createNewRepo(repo) {
-  return {
-    name: repo.name,
-    owner: repo.owner.login,
-    // Guarentee that the first comparison is true by being later than 271,821 B.C.
-    updated_at: new Date(-8640000000000000).toGMTString(),
-    stats: {
-      codeFrequency: '',
-      punchCard: '',
-      commitActivity: '',
-    }
-  };
-}
 
-// /**
-//  * ======= STEP 4 ========
-//  *
-//  * Goes through each repo in the org's members array and gets all stats associated with each repo
-//  * Stores all stats in org.members.[[member]].[[repo]].stats array in mongo
-//  * 
-//  * This is an expensive call so Github only returns archived data
-//  * We have to make the calls twice in order to make sure they are archived. (There's got to be a better way)
-//  * NOTE: All stats are stored as a stringified form
-//  */
+
+/**
+ * ======= STEP 4 ========
+ *
+ * Goes through each repo in the org's members array and gets all stats associated with each repo
+ * Stores all stats in org.members.[[member]].[[repo]].stats array in mongo
+ * 
+ * This is an expensive call so Github only returns archived data
+ * We have to make the calls twice in order to make sure they are archived. (There's got to be a better way)
+ * NOTE: All stats are stored as a stringified form
+ */
 
 exports.getAllStats = function(org, next) {
-   async.each(org.members, getStatsForMember, goToNextStep);
-
-  function getStatsForMember(member, done) {
-    async.filter(member.repos, hasBeenUpdatedSinceLastScrape, function(updatedRepos) {
-      console.log(member.username, 'has', updatedRepos.length, 'recently updated repos.');
-      if (updatedRepos.length) {
-        async.each(updatedRepos, getStatsForRepo, function(err){
-          console.log('Finished getting all stats for ', member.username);
-          if (err) {
-            console.log("Error getting all stats", err);
-          }
-          done(null);
-        });
-      } else {
-        done(null);
-      }
-    });
-  }
+ async.each(org.members, getStatsForMember, goToNextStep);
 
   function goToNextStep(err) {
-    if (err) { next(err, null); }
-    else { utils.saveData(org, next); }
+    err ? next(err, null) : utils.saveData(org, next);
   }
 };
 
 /* * *  STEP 4 HELPERS  * * */
 
-// async.filter callback
-function hasBeenUpdatedSinceLastScrape(repo, shouldBePushed){
+function getStatsForMember(member, done) {
+  async.filter(member.repos, hasChangedSinceLastScrape, updateStats);
+
+  function updateStats(repos){
+    console.log(member.username, 'has', repos.length, 'recently updated repos.');
+    if (repos.length) {
+      async.each(repos, getStatsForRepo, function(){
+        done(null);
+      });
+    } else {
+      done(null);
+    }
+  }
+}
+
+function hasChangedSinceLastScrape(repo, shouldBePushed){
   var options = {
     user: repo.owner,
     repo: repo.name,
@@ -295,11 +265,10 @@ function hasBeenUpdatedSinceLastScrape(repo, shouldBePushed){
       'If-Modified-Since': repo.updated_at
     }
   };
-  github.repos.get(options, function(err, results) {
-    if (err){
-      console.log('error with repos.get', err);
-      shouldBePushed(false);
-    } else if (results.meta.status === '304 Not Modified') {
+
+  github.repos.getAsync(options)
+  .then(function(results) {
+    if (results.meta.status === '304 Not Modified') {
       shouldBePushed(false);
     } else {
       // Update last modified date
@@ -315,22 +284,21 @@ function getStatsForRepo(repo, done) {
     repo: repo.name
   };
 
-  github.repos.getStatsCodeFrequency(options, function(err, stats) {
-    if (err) {
-      console.log('Error getting codeFrequency', err);
-      done(null);
-    }
+  github.repos.getStatsCodeFrequencyAsync(options)
+  .then(function(stats) {
     console.log('got codeFrequency for', repo.owner + '/' + repo.name);
     repo.stats.codeFrequency = JSON.stringify(stats);
-    github.repos.getStatsPunchCard(options, function(err, stats) {
-      if (err) {
-        console.log('Error getting punchCard', err);
-      } else {
-        repo.stats.punchCard = JSON.stringify(stats);
-        console.log('got punchCard for', repo.owner + '/' + repo.name);
-      }
+  })
+  .then(function(){
+    github.repos.getStatsPunchCardAsync(options)
+    .then(function(stats) {
+      repo.stats.punchCard = JSON.stringify(stats);
+      console.log('got punchCard for', repo.owner + '/' + repo.name);
       done(null);
     });
+  })
+  .catch(function(err) {
+    done(null);
   });
 }
 
