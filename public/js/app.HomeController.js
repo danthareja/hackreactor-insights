@@ -119,6 +119,5 @@ angular.module("hrStats").controller("HomeController", function($scope, $statePa
   };
   $scope.insight = 0;
   $interval(nextInsight, 4000);
-
 });
 
