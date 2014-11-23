@@ -15,11 +15,18 @@ github.getOrganization('hackreactor')
 .then(github.getAllMembers)
 .then(github.getAllRepos)
 .then(github.getAllStats)
-.then(github.logSuccess)
-.then(closeMongoose);
+.then(closeMongoose)
+.catch(handleError);
 
 function closeMongoose(org) {
   console.log("Got all github data for", org.username, "! Woo!");
+  console.log("Closing mongoose..");
+  mongoose.connection.close();
+}
+
+function handleError(err) {
+  console.log("Broke out of promise chain");
+  console.log("Error: ", err);
   console.log("Closing mongoose..");
   mongoose.connection.close();
 }

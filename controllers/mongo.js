@@ -100,11 +100,11 @@ exports.getPunchCard = function(req, res) {
         // For example, [2, 14, 25] indicates that there were 25 total commits, during the 2:00pm hour on Tuesdays. All times are based on the time zone of individual commits.
         // We want to make sure there's at least some action!
         if (stat[2] > 0) {
-          console.log("found a repo:", repo.name, " from this week! at day " , stat[0] , " hour ", stat[1], " with number of commits: ", stat[2]);
+          console.log("found a repo:", repo.owner, "/", repo.name, "from this week! at day " , stat[0] , " hour ", stat[1], " with number of commits: ", stat[2]);
           // d3 friendly format (see above)
           stats[i].commits += stat[2];
           stats[i].repos.push({
-            user: member.username,
+            user: repo.owner,
             repo: repo.name,
             commits: stat[2]
           });

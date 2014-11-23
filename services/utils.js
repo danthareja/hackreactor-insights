@@ -8,9 +8,8 @@ var github = new GitHubApi({
 });
 
 exports.saveData = function(model, resolve, reject) {
-  console.log('--- Calling saveData ---');
+  console.log('--- Saving data to mongo ---');
   model.save(function(err, model, numberAffected) {
-    console.log("numberAffected", numberAffected);
     if (err) {
       console.log("Error saving data to mongo", err);
       reject(err);

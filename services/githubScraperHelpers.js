@@ -173,7 +173,6 @@ function getReposForMember(member, done) {
   utils.paginateAndPush(github.repos.getFromUser, options)
   .then(function(repos) {
     if (repos.length) {
-      console.log('Etag changed for', member.username,'! Checking if any of the returned repos are new..');
       member.etag = repos.meta.etag; // Update etag
       updateReposForMember(member, repos, done);
     } else {
@@ -196,7 +195,7 @@ function updateReposForMember(member, repos, done) {
   }
 
   function addNewAndCurrentRepos(newRepos) {
-    console.log('newRepos for', member.username, 'back from filter:', newRepos.length);
+    console.log('newAndCurrentRepos for', member.username, ':', newRepos.length);
     newRepos.forEach(createNewRepo);
     done(null);
   }
@@ -253,7 +252,7 @@ function getStatsForMember(member, done) {
   async.filter(member.repos, hasChangedSinceLastScrape, updateStats);
 
   function updateStats(repos){
-    console.log(member.username, 'has', repos.length, 'recently updated repos.');
+    console.log(member.username, 'has', repos.length, 'repos changed since last scrape.');
     if (repos.length) {
       async.each(repos, getStatsForRepo, function(){
         done(null);
@@ -286,6 +285,7 @@ function hasChangedSinceLastScrape(repo, shouldBePushed){
   });
 }
 
+// TODO: Handle 202 reponses (Not cached)
 function getStatsForRepo(repo, done) {
   var options = {
     user: repo.owner,
@@ -302,14 +302,10 @@ function getStatsForRepo(repo, done) {
     .then(function(stats) {
       repo.stats.punchCard = JSON.stringify(stats);
       console.log('got punchCard for', repo.owner + '/' + repo.name);
-      done(null);
     })
-    .catch(function(){
+    .finally(function() {
       done(null);
     });
-  })
-  .catch(function() {
-    done(null);
   });
 }
 
