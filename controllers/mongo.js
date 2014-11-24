@@ -30,29 +30,27 @@ exports.getCodeFrequency = function(req, res) {
 
   req.org.members.filter(hasRepos).forEach(function(member) {
     member.repos.forEach(function(repo) {
-      parseStats(repo.stats.codeFrequency).forEach(pushStats);
+      parseStats(repo.stats.codeFrequency).forEach(function(stat) {
+        var date = stat[0];
+        var additions = stat[1];
+        var deletions = stat[2];
+        if (isLastSunday(date) && (additions > 0 || deletions < 0)) {
+          console.log("found a repo:", repo.name, " from this week! it adds " , additions , " lines and removes ", deletions, " lines for a total of ", additions + deletions, " new lines ");
+          stats.push({
+            username: repo.owner,
+            repo: repo.name,
+            additions: additions,
+            deletions: -deletions,
+            net: additions + deletions
+          });
+        }
+      });
     });
   });
 
   res.send(stats);
 
-  function pushStats(stat) {
-    var date = stat[0];
-    var additions = stat[1];
-    var deletions = stat[2];
-    if (isLastSunday(date) && (additions > 0 || deletions < 0)) {
-      console.log("found a repo:", repo.name, " from this week! it adds " , additions , " lines and removes ", deletions, " lines for a total of ", additions + deletions, " new lines ");
-      stats.push({
-        username: repo.owner,
-        repo: repo.name,
-        additions: additions,
-        deletions: -deletions,
-        net: additions + deletions
-      });
-    }
-  }
-
-  // GitHub Punch card dates each week starting with Sunday, 0:00:00 UTC.
+   // GitHub Punch card dates each week starting with Sunday, 0:00:00 UTC.
   function isLastSunday(date) {
     var now = new Date();
     // Handle any timezone that new Date() is created in
@@ -76,25 +74,23 @@ exports.getPunchCard = function(req, res) {
 
   req.org.members.filter(hasRepos).forEach(function(member) {
     member.repos.forEach(function(repo) {
-      parseStats(repo.stats.punchCard).forEach(pushStats);
+      parseStats(repo.stats.punchCard).forEach(function(stat, i) {
+        // punchCard stats come in triples [day, hour, # of commits]
+        var commits = stat[2];
+        if (commits > 0) {
+          console.log("found a repo:", repo.owner, "/", repo.name, "from this week! at day " , stat[0] , " hour ", stat[1], " with number of commits: ", stat[2]);
+          stats[i].commits += commits;
+          stats[i].repos.push({
+            user: repo.owner,
+            repo: repo.name,
+            commits: commits
+          });
+        }
+      });
     });
   });
 
   res.send(stats);
-
-  // punchCard stats come in triples [day, hour, # of commits]
-  function pushStats(stat, i) {
-    var commits = stat[2];
-    if (commits > 0) {
-      console.log("found a repo:", repo.owner, "/", repo.name, "from this week! at day " , stat[0] , " hour ", stat[1], " with number of commits: ", stat[2]);
-      stats[i].commits += commits;
-      stats[i].repos.push({
-        user: repo.owner,
-        repo: repo.name,
-        commits: commits
-      });
-    }
-  }
 
   // Github's zero indexed days/hours makes it convenient to initialize in a nested for loop
   function initializeStats(){
