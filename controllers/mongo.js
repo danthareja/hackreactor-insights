@@ -35,7 +35,7 @@ exports.getCodeFrequency = function(req, res) {
         var additions = stat[1];
         var deletions = stat[2];
         if (isLastSunday(date) && (additions > 0 || deletions < 0)) {
-          console.log("found a repo:", repo.name, " from this week! it adds " , additions , " lines and removes ", deletions, " lines for a total of ", additions + deletions, " new lines ");
+          console.log(date);
           stats.push({
             username: repo.owner,
             repo: repo.name,
@@ -75,10 +75,9 @@ exports.getPunchCard = function(req, res) {
   req.org.members.filter(hasRepos).forEach(function(member) {
     member.repos.forEach(function(repo) {
       parseStats(repo.stats.punchCard).forEach(function(stat, i) {
-        // punchCard stats come in triples [day, hour, # of commits]
+        // punchCard stats come in triples [day, hour, # of commits] and all times are based on the time zone of individual commits
         var commits = stat[2];
         if (commits > 0) {
-          console.log("found a repo:", repo.owner, "/", repo.name, "from this week! at day " , stat[0] , " hour ", stat[1], " with number of commits: ", stat[2]);
           stats[i].commits += commits;
           stats[i].repos.push({
             user: repo.owner,
