@@ -20,14 +20,14 @@ Promise.promisifyAll(github.orgs);
 Promise.promisifyAll(github.repos);
 
 
-/**********************************************************************************
- *                                  STEP 1                                        *
- *                                                                                *
- * Get organization.                                                              *
- * Grab data from GitHub and create new entry if organization does not exist yet  *
- *                                                                                *
- * Resolves with an organization Object.                                          *
- **********************************************************************************/
+  /**********************************************************************************
+   *                                  STEP 1                                        *
+   *                                                                                *
+   * Get organization.                                                              *
+   * Grab data from GitHub and create new entry if organization does not exist yet  *
+   *                                                                                *
+   * Resolves with an organization Object.                                          *
+   **********************************************************************************/
 
 
 exports.getOrganization = function(name) {
@@ -41,7 +41,7 @@ exports.getOrganization = function(name) {
   });
 };
 
-/* * * * * * * * * * * * * * * * STEP 1 HELPERS * * * * * * * * * * * * * * * * * */
+  /* * * * * * * * * * * * * * * * STEP 1 HELPERS * * * * * * * * * * * * * * * * * */
 
 function addNewOrganization(name, resolve, reject) {
   console.log('--- Calling addNewOrganization for', name, '---');
@@ -49,39 +49,35 @@ function addNewOrganization(name, resolve, reject) {
   github.orgs.getAsync(options)
   .then(function(org) {
     console.log('Results returned from github.org.get', org.login);
-    var newOrg = createNewOrganization(org);
+    var newOrg = new Organization({
+      username: org.login,
+      profile: {
+        display_name: org.name,
+        url: org.html_url,
+        avatar: org.avatar_url,
+        location: org.location,
+        email: org.email,
+        public_repos: org.public_repos,
+        public_gists: org.public_gists,
+        followers: org.followers,
+        following: org.following,
+        created_at: org.created_at,
+        updated_at: org.updated_at
+      }
+    });
     utils.saveData(newOrg, resolve, reject);
   });
 }
 
-function createNewOrganization(org) {
-  return new Organization({
-    username: org.login,
-    profile: {
-      display_name: org.name,
-      url: org.html_url,
-      avatar: org.avatar_url,
-      location: org.location,
-      email: org.email,
-      public_repos: org.public_repos,
-      public_gists: org.public_gists,
-      followers: org.followers,
-      following: org.following,
-      created_at: org.created_at,
-      updated_at: org.updated_at
-    }
-  });
-}
 
-
-/**********************************************************************************
- *                                  STEP 2                                        *
- *                                                                                *
- * Get all members associated with the organization from GitHub.                  *
- * If the organization members have changed at all, we will add the new ones.     *
- *                                                                                *
- * Resolves with an organization Object.                                          *
- **********************************************************************************/
+  /**********************************************************************************
+   *                                  STEP 2                                        *
+   *                                                                                *
+   * Get all members associated with the organization from GitHub.                  *
+   * If the organization members have changed at all, we will add the new ones.     *
+   *                                                                                *
+   * Resolves with an organization Object.                                          *
+   **********************************************************************************/
 
 
 exports.getAllMembers = function(org) {
@@ -103,7 +99,7 @@ exports.getAllMembers = function(org) {
   });
 };
 
-/* * * * * * * * * * * * * * * * STEP 2 HELPERS * * * * * * * * * * * * * * * * * */
+  /* * * * * * * * * * * * * * * * STEP 2 HELPERS * * * * * * * * * * * * * * * * * */
 
 function membersHaveChanged(org, members) {
   return org.members.length !== members.length;
@@ -137,15 +133,15 @@ function updateMembers(org, members, resolve, reject) {
 }
 
 
-/**********************************************************************************
- *                                  STEP 3                                        *
- *                                                                                *
- * Get all repos for each member in the organization.                             *
- * Preflight calls with 'If-None-Match' header to avoid rate limits.              *
- * Only saves repos that have been updated in the last month.                     *
- *                                                                                *
- * Resolves with an organization Object.                                          *
- **********************************************************************************/
+  /**********************************************************************************
+   *                                  STEP 3                                        *
+   *                                                                                *
+   * Get all repos for each member in the organization.                             *
+   * Preflight calls with 'If-None-Match' header to avoid rate limits.              *
+   * Only saves repos that have been updated in the last month.                     *
+   *                                                                                *
+   * Resolves with an organization Object.                                          *
+   **********************************************************************************/
 
 
 exports.getAllRepos = function(org) {
@@ -158,7 +154,7 @@ exports.getAllRepos = function(org) {
   });
 };
 
-/* * * * * * * * * * * * * * * * STEP 3 HELPERS * * * * * * * * * * * * * * * * * */
+  /* * * * * * * * * * * * * * * * STEP 3 HELPERS * * * * * * * * * * * * * * * * * */
 
 function getReposForMember(member, done) {
   var options = {
@@ -225,15 +221,15 @@ function hasBeenUpdatedInLastMonth(repo) {
 }
 
 
-/**********************************************************************************
- *                                  STEP 4                                        *
- *                                                                                *
- * Get all stats for each repos associated for every member.                      *
- * GitHub returns cached stats. Might have to call twice the first time.          *
- * All stats are stringified before storage.                                      *
- *                                                                                *
- * Resolves with an organization Object.                                          *
- **********************************************************************************/
+  /**********************************************************************************
+   *                                  STEP 4                                        *
+   *                                                                                *
+   * Get all stats for each repos associated for every member.                      *
+   * GitHub returns cached stats. Might have to call twice the first time.          *
+   * All stats are stringified before storage.                                      *
+   *                                                                                *
+   * Resolves with an organization Object.                                          *
+   **********************************************************************************/
 
 
 exports.getAllStats = function(org) {
@@ -246,7 +242,7 @@ exports.getAllStats = function(org) {
   });
 };
 
-/* * * * * * * * * * * * * * * * STEP 4 HELPERS * * * * * * * * * * * * * * * * * */
+  /* * * * * * * * * * * * * * * * STEP 4 HELPERS * * * * * * * * * * * * * * * * * */
 
 function getStatsForMember(member, done) {
   async.filter(member.repos, hasChangedSinceLastScrape, updateStats);
@@ -285,7 +281,8 @@ function hasChangedSinceLastScrape(repo, shouldBePushed){
   });
 }
 
-// TODO: Handle 202 reponses (Not cached)
+// FIXME: Cache errored stats and retry them after
+// FIXME: Handle 202 reponses (Not cached)
 function getStatsForRepo(repo, done) {
   var options = {
     user: repo.owner,
