@@ -26,17 +26,17 @@ exports.getOrganization = function(req, res, next) {
 
 
 exports.getCodeFrequency = function(req, res) {
-  var stats = [];
-
+  var codeFrequency = [];
+  var lastWeek = getLastWeek(req.org);
+  
   req.org.members.filter(hasRepos).forEach(function(member) {
     member.repos.forEach(function(repo) {
       parseStats(repo.stats.codeFrequency).forEach(function(stat) {
         var date = stat[0];
         var additions = stat[1];
         var deletions = stat[2];
-        if (isLastSunday(date) && (additions > 0 || deletions < 0)) {
-          console.log(date);
-          stats.push({
+        if (date === lastWeek && (additions > 0 || deletions < 0)) {
+          codeFrequency.push({
             username: repo.owner,
             repo: repo.name,
             additions: additions,
@@ -48,16 +48,7 @@ exports.getCodeFrequency = function(req, res) {
     });
   });
 
-  res.send(stats);
-
-   // GitHub Punch card dates each week starting with Sunday, 0:00:00 UTC.
-  function isLastSunday(date) {
-    var now = new Date();
-    // Handle any timezone that new Date() is created in
-    var todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    var sundayUTC = new Date(todayUTC.setDate(todayUTC.getDate()-todayUTC.getDay()-8));
-    return date === sundayUTC.getTime() / 1000;
-  }
+  res.send(codeFrequency);
 };
 
 
@@ -70,16 +61,16 @@ exports.getCodeFrequency = function(req, res) {
 
  
 exports.getPunchCard = function(req, res) {
-  var stats = initializeStats();
-
+  var punchCard = initializePunchCard();
+  
   req.org.members.filter(hasRepos).forEach(function(member) {
     member.repos.forEach(function(repo) {
       parseStats(repo.stats.punchCard).forEach(function(stat, i) {
         // punchCard stats come in triples [day, hour, # of commits] and all times are based on the time zone of individual commits
         var commits = stat[2];
         if (commits > 0) {
-          stats[i].commits += commits;
-          stats[i].repos.push({
+          punchCard[i].commits += commits;
+          punchCard[i].repos.push({
             user: repo.owner,
             repo: repo.name,
             commits: commits
@@ -89,26 +80,38 @@ exports.getPunchCard = function(req, res) {
     });
   });
 
-  res.send(stats);
-
-  // Github's zero indexed days/hours makes it convenient to initialize in a nested for loop
-  function initializeStats(){
-    var stats = [];
-    for (var day = 0; day < 7; day++) {
-      for (var hour = 0; hour < 24; hour++) {
-        stats.push({
-          day: day,
-          hour: hour,
-          commits: 0,
-          repos: []
-        });
-      }
-    }
-    return stats;
-  }
+  res.send(punchCard);
 };
 
   /* * * * * * * * * * * * * * * * HELPERS * * * * * * * * * * * * * * * * * */
+
+// Independent of javascript Date() and therefore different server dates. Kind of slow
+function getLastWeek(org) {
+  return org.members.reduce(function(memo, member) {
+    return member.repos.reduce(function(memo, repo){
+      var cf = parseStats(repo.stats.codeFrequency);
+      var stat = cf[cf.length - 2] || []; // The last full week of codeFrequency stats
+      var date = stat[0];
+      return date > memo ? date : memo;
+    }, 0);
+  }, 0);
+}
+
+// Github's zero indexed days/hours makes it convenient to initialize in a nested for loop
+function initializePunchCard(){
+  var punchCard = [];
+  for (var day = 0; day < 7; day++) {
+    for (var hour = 0; hour < 24; hour++) {
+      punchCard.push({
+        day: day,
+        hour: hour,
+        commits: 0,
+        repos: []
+      });
+    }
+  }
+  return punchCard;
+}
 
 function parseStats(statString) {
   // Every so often, GitHub gives us an undefined, just return out with an empty array
