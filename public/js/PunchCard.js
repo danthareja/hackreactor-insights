@@ -1,9 +1,51 @@
-/**
- * directive: codeFrequency - handles all the pretty d3 visualization for the codeFrequency dataset
- */
+angular.module('PunchCard', ['APIService', 'd3', 'utils'])
 
-angular.module('hrStats')
-.directive('punchCard', ['d3', '$window', function(d3, $window){
+.factory('PunchCardService', ['APIService', 'utils', function(APIService, utils){
+  return APIService.getPunchCard().then(function(data) {
+    var punchCard = {};
+
+    // Put in proper format so we can use the same helper function
+    var commitsPerDay = data.reduce(function(result, punchCard) {
+      var dayNum = punchCard.day;
+      var dayString = utils.numberToDay(dayNum);
+      result[dayNum] = result[dayNum] || { day: dayString, commits: 0, repos: {} };
+      result[dayNum].commits += punchCard.commits;
+
+      punchCard.repos.reduce(function(repos, repo) {
+        var key = repo.user + repo.repo;
+        repos[key] = true;
+        return repos;
+      }, result[dayNum].repos);
+
+      return result;
+    },[]);
+
+    var mostProductiveHour = utils.getMost('commits', data);
+    var leastProductiveHour = utils.getLeast('commits', data);
+    var mostProductiveDay = utils.getMost('commits', commitsPerDay);
+    
+    // Format insights
+    punchCard.data = data;
+
+    punchCard.mostProductiveHour = utils.numberToHour(mostProductiveHour.hour);
+    punchCard.mostProductiveHourDay = utils.numberToDay(mostProductiveHour.day);
+    punchCard.mostProductiveHourCommits = utils.numberWithCommas(mostProductiveHour.commits);
+    punchCard.mostProductiveHourRepoCount = mostProductiveHour.repos.length;
+    
+    punchCard.leastProductiveHour = utils.numberToHour(leastProductiveHour.hour);
+    punchCard.leastProductiveHourDay = utils.numberToDay(leastProductiveHour.day);
+    punchCard.leastProductiveHourCommits = utils.numberWithCommas(leastProductiveHour.commits);
+    punchCard.leastProductiveHourRepoCount = leastProductiveHour.repos.length;
+
+    punchCard.mostProductiveDay = mostProductiveDay.day;
+    punchCard.mostProductiveDayCommits = utils.numberWithCommas(mostProductiveDay.commits);
+    punchCard.mostProductiveDayRepoCount = Object.keys(mostProductiveDay.repos).length;
+
+    return punchCard;
+  });
+}])
+
+.directive('punchCardGraph', ['d3', '$window', function(d3, $window){
   var link = function(scope, element, attrs) {
     // Main svg
     var svg = d3.select(element[0])

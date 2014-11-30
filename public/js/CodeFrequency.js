@@ -1,9 +1,22 @@
-/**
- * directive: codeFrequency - handles all the pretty d3 visualization for the codeFrequency dataset
- */
+angular.module('CodeFrequency', ['APIService', 'd3', 'utils'])
 
-angular.module('hrStats')
-.directive('codeFrequency', ['d3', '$window', function(d3, $window){
+.factory('CodeFrequencyService', ['APIService', 'utils', function(APIService, utils){
+  return APIService.getCodeFrequency().then(function(data) {
+    var codeFrequency = {};
+
+    // Format insights
+    codeFrequency.data = data;
+
+    var totalAdditions = utils.getTotal('additions', data);
+    codeFrequency.totalAdditions = utils.numberWithCommas(totalAdditions);
+    codeFrequency.totalAdditionsMapped = utils.linesOfCodeMap(totalAdditions);
+    codeFrequency.averageAdditions = utils.numberWithCommas(Math.floor(totalAdditions / 152)); // Hardedcoded number of students
+    
+    return codeFrequency;
+  });
+}])
+
+.directive('codeFrequencyGraph', ['d3', '$window', function(d3, $window){
   var link = function(scope, element, attrs) {
     // Main svg
     var svg = d3.select(element[0])
