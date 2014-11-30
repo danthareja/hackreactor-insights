@@ -47,16 +47,13 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
 
 .directive('punchCardGraph', ['$window', 'd3', 'utils', function($window, d3, utils) {
   var link = function(scope, element, attrs) {
-    // // Tooltip
-    // var tooltip = d3.select("#punchCard").insert("div")
-    //   .style("opacity", 0)
-    //   .style("text-align", "center")
-    //   .style("width", "175px")
-    //   .style("height", "70px")
-    //   .style("padding", "5px");
     
     // Main svg
     var svg = d3.select(element[0]).append('svg');
+
+    // Tooltip
+    var tooltip = d3.select('.tooltip').append('div')
+      .style('width', '0px');
 
     // Browser onresize event
     window.onresize = function() {
@@ -167,50 +164,53 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
 
       // Animations
       .on('mouseover', function(d) {
-        console.log("mouseing over ", d);
-
         // Highlight bar
         d3.select(this)
         .style('opacity', 0.75)
         .style('fill', '#65D868');
 
-        // // Add tooltip text
-        // tooltip.html(
-        //   '<div><span>' + numberToDay(d.day) + ' @ ' + numberToHour(d.hour) + '</span></div>' +
-        //   '<div><span>' + d.commits + ' commits to</span></div>' +
-        //   '<div><span>' + d.repos.length + ' repos</span></div>'
-        // );
+        // Add tooltip text
+        tooltip.html(
+          '<span class="italic">' + utils.numberToDay(d.day) + '</span>' + ' @ ' + '<span class="italic">' + utils.numberToHour(d.hour) + '</span>' + '<br>' +
+          '<span style="font-weight:400">' + d.commits + '</span>' + ' commits to ' + '<br>' +
+          '<span style="font-weight:400">' + d.repos.length + '</span>' + ' repos'
+        );
 
-        // // Fade in tooltip
-        // tooltip.transition()
-        //   .duration(100)
-        //   .style("opacity", 0.9);
+        // Fade in tooltip
+        tooltip.style('margin', '10px');
+        tooltip.transition()
+          .duration(500)
+          .ease('cubic-out')
+          .style('width', '135px')
+          .style('opacity', 1);
       })
       .on('mouseout', function(d) {
-        console.log("mouseing out of : ", d);
-
         // Remove highlight
         d3.select(this)
-        .style("opacity", 0.75)
+        .style('opacity', 0.75)
         .style('fill', function(d,i) {
           return blueScale(d.commits);
         });
 
-        // // Remove tooltip
-        // tooltip.transition()
-        //   .duration(300)
-        //   .style("opacity", 0);
+        // Remove tooltip
+        tooltip.transition()
+          .delay(500)
+          .duration(500)
+          .ease('cubic-out')
+          .style('width', '0px')
+          .style('opacity', 0)
+          .style('margin', '0px');
       });
 
       // Add axis
-      svg.append("g")
-        .attr("class", "axis")
-        .attr("transform", "translate(0," + (height - yPadding) + ")")
+      svg.append('g')
+        .attr('class', 'axis')
+        .attr('transform', 'translate(0,' + (height - yPadding) + ')')
         .call(xAxis);
 
       svg.append('g')
-        .attr("class", "axis")
-        .attr("transform", "translate(" + xPadding + ",0)")
+        .attr('class', 'axis')
+        .attr('transform', 'translate(' + xPadding + ',0)')
         .call(yAxis);
     };
   };

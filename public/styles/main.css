@@ -40,15 +40,13 @@ body {
 }
 
 .tooltip {
-  height: 10%;
-  width: 30%;
+  height: 80px;
   color: #FFFFFF;
-  background-color: #45A8F1;
+  background-color: #65D868;
   position: absolute;
   right: 0;
-  margin-right: 10px;
-  padding: 10px;
   text-align: right;
+  opacity: 0.9;
 }
 
 .green {
