@@ -1,4 +1,4 @@
-angular.module('APIService', ['LocalStorageModule'])
+angular.module('hrInsights.APIService', ['LocalStorageModule'])
 // TODO: figure out timing on localStorage reup
 .service('APIService', ['$http', '$q', 'localStorageService', function($http, $q, localStorageService) {
   this.getCodeFrequency = function() {

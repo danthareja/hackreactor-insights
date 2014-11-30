@@ -1,4 +1,4 @@
-angular.module('PunchCard', ['APIService', 'd3', 'utils'])
+angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsights.utils', 'd3'])
 
 .factory('PunchCardService', ['APIService', 'utils', function(APIService, utils) {
   return APIService.getPunchCard().then(function(data) {

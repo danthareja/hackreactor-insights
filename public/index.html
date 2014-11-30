@@ -5,11 +5,12 @@
     <script src="/components/angular-ui-router/release/angular-ui-router.min.js"></script>
     <script src="/components/angular-local-storage/dist/angular-local-storage.min.js"></script>
 
-    <script src="js/d3Service.js"></script>
+    <script src="js/d3.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/APIService.js"></script>
-    <script src="js/CodeFrequency.js"></script>
-    <script src="js/PunchCard.js"></script>
+    <script src="js/stats/punchCard.js"></script>
+    <script src="js/stats/codeFrequency.js"></script>
+    <script src="js/stats.js"></script>
     <script src="js/app.js"></script>
 
     <link rel="stylesheet" href="styles/main.css">
@@ -19,7 +20,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Hack Reactor Stats</title>
   </head>
-  <body ng-app="hrStats">
+  <body ng-app="hrInsights">
     <ui-view>
   </body>
 </html>

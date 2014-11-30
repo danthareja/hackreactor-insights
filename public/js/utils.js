@@ -1,4 +1,4 @@
-angular.module('utils', [])
+angular.module('hrInsights.utils', [])
 
 .service('utils', [function(){
   this.getTotal = function(stat, type) {

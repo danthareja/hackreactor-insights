@@ -1,4 +1,4 @@
-angular.module('CodeFrequency', ['APIService', 'd3', 'utils'])
+angular.module('hrInsights.stats.codeFrequency', ['hrInsights.APIService', 'hrInsights.utils', 'd3'])
 
 .factory('CodeFrequencyService', ['APIService', 'utils', function(APIService, utils){
   return APIService.getCodeFrequency().then(function(data) {

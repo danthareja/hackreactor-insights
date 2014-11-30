@@ -1,4 +1,4 @@
-angular.module('hrStats', ['ui.router', 'CodeFrequency', 'PunchCard'])
+angular.module('hrInsights', ['ui.router', 'hrInsights.stats'])
 
 .config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
   $urlRouterProvider.otherwise('/');
