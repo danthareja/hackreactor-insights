@@ -171,7 +171,7 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
 
         // Add tooltip text
         tooltip.html(
-          '<span class="italic">' + utils.numberToDay(d.day) + '</span>' + ' @ ' + '<span class="italic">' + utils.numberToHour(d.hour) + '</span>' + '<br>' +
+          '<span class="italic">' + utils.numberToDay(d.day) + ' @ ' + utils.numberToHour(d.hour) + '</span>' + '<br>' +
           '<span style="font-weight:400">' + d.commits + '</span>' + ' commits to ' + '<br>' +
           '<span style="font-weight:400">' + d.repos.length + '</span>' + ' repos'
         );
@@ -184,6 +184,7 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
           .style('width', '135px')
           .style('opacity', 1);
       })
+
       .on('mouseout', function(d) {
         // Remove highlight
         d3.select(this)
@@ -192,10 +193,12 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
           return blueScale(d.commits);
         });
 
+
         // Remove tooltip
         tooltip.transition()
           .delay(500)
           .duration(500)
+          .text('')
           .ease('cubic-out')
           .style('width', '0px')
           .style('opacity', 0)
