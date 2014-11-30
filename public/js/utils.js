@@ -65,4 +65,11 @@ angular.module('utils', [])
 
     return map[lines];
   };
+
+  this.getLastSunday = function(d) {
+    var dateUTC = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var lastSunday = new Date(dateUTC.setDate(dateUTC.getDate()-dateUTC.getDay()-1));
+    return lastSunday;
+  };
+
 }]);

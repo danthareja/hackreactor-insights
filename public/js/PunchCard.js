@@ -73,7 +73,7 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
     // Scale blue darkness based on number of commits
     var blueScale = d3.scale.linear()
       .domain([0, utils.getMost('commits', scope.data).commits])
-      .range(['#DDDDDD', '#03a9f4']);
+      .range(['#FFFFFF', '#03a9f4']);
 
     /**
      * Scope.render -> straight up d3
@@ -99,17 +99,26 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
 
       var xScale = d3.scale.linear()
         .domain([0, width])
-        .range([xPadding, width - xPadding]);
+        .range([xPadding, width]);
+
+      var lastSunday = utils.getLastSunday(new Date());
+      var lastLastSunday = utils.getLastSunday(lastSunday);
+
+      var xAxisScale = d3.time.scale()
+        .domain([lastLastSunday, lastSunday])
+        .range([xPadding, width]);
+
 
       var xAxis = d3.svg.axis()
-        .scale(xScale)
+        .scale(xAxisScale)
         .orient('bottom')
-        .ticks(5);
+        .ticks(7)
+        .tickFormat(d3.time.format('%a %I%p'));
 
       var yAxis = d3.svg.axis()
         .scale(yAxisScale)
-        .orient('left');
-
+        .orient('left')
+        .ticks(5);
 
       svg.attr('width', width).attr('height', height);
       svg.selectAll('rect')

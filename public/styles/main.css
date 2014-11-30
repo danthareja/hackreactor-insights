@@ -17,3 +17,14 @@ a {
 .blue {
   color: #03a9f4;
 }
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-size: 12px;
+}
