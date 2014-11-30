@@ -70,9 +70,11 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
       scope.render(scope.data);
     });
 
+
     // Scale blue darkness based on number of commits
+    var maxCommitCount = utils.getMost('commits', scope.data).commits;
     var blueScale = d3.scale.linear()
-      .domain([0, utils.getMost('commits', scope.data).commits])
+      .domain([0, maxCommitCount])
       .range(['#FFFFFF', '#03a9f4']);
 
     /**
@@ -89,17 +91,19 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
       var yPadding = 20;
       var xPadding = 50;
 
+      // Graph scales
       var yScale = d3.scale.linear()
-        .domain([0, utils.getMost('commits', data).commits])
+        .domain([0, maxCommitCount])
         .range([yPadding, height - yPadding]);
-
-      var yAxisScale = d3.scale.linear()
-        .domain([0, utils.getMost('commits', data).commits])
-        .range([height - yPadding, yPadding]);
 
       var xScale = d3.scale.linear()
         .domain([0, width])
         .range([xPadding, width]);
+
+      // Axis
+      var yAxisScale = d3.scale.linear()
+        .domain([0, maxCommitCount])
+        .range([height - yPadding, yPadding]);
 
       var lastSunday = utils.getLastSunday(new Date());
       var lastLastSunday = utils.getLastSunday(lastSunday);
@@ -108,17 +112,31 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
         .domain([lastLastSunday, lastSunday])
         .range([xPadding, width]);
 
-
       var xAxis = d3.svg.axis()
         .scale(xAxisScale)
         .orient('bottom')
-        .ticks(7)
+        .ticks(14)
         .tickFormat(d3.time.format('%a %I%p'));
 
       var yAxis = d3.svg.axis()
         .scale(yAxisScale)
         .orient('left')
         .ticks(5);
+
+      // filter half of the data if the width gets to a certain smaller size
+      if (width < 800) {
+        data = data.filter(function(d, i) {
+          return i % 2 || d.commits == maxCommitCount;
+        });
+        xAxis.ticks(7);
+      }
+
+      if (width < 550) {
+        data = data.filter(function(d, i) {
+          return i % 3 || d.commits == maxCommitCount;
+        });
+        xAxis.tickFormat(d3.time.format('%a'));
+      }
 
       svg.attr('width', width).attr('height', height);
       svg.selectAll('rect')
