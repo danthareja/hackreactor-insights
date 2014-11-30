@@ -128,8 +128,7 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
 
       var yAxis = d3.svg.axis()
         .scale(yAxisScale)
-        .orient('left')
-        .ticks(5);
+        .orient('left');
 
       // Responsive stuff
       if (width < 800) {

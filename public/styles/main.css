@@ -1,24 +1,42 @@
-@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro);
-@import url(http://fonts.googleapis.com/css?family=Merriweather);
+@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,300italic,400italic);
 
 body {
   font-family: "Source Sans Pro","Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
-  font-weight: 200;
+  font-weight: 300;
   font-size: 1em;
   margin: 0;
   color: #262626;
   text-rendering: optimizeLegibility
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: "Merriweather",Georgia,serif;
-  font-weight: 300;
-  font-style: normal;
-  color: #262626;
-  text-rendering: optimizeLegibility;
-  margin-top: 0;
-  margin-bottom: 0;
-  line-height: 1.5em;
+.axis path,
+.axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-size: 14px;
+}
+
+.title {
+  font-size: 1.1em;
+  text-align: center;
+  margin-top: 5px;
+}
+
+.description {
+  margin-left: 10px;
+}
+
+.insight {
+  font-size: 1.2em;
+  width: 100%;
+  text-align: center;
+  background: #45A8F1;
+  color: white;
+  padding: 15px 5px;
 }
 
 .tooltip {
@@ -33,44 +51,16 @@ h1, h2, h3, h4, h5, h6 {
   text-align: right;
 }
 
-.insight {
-  font-size: 1.2rem;
-  width: 100%;
-  text-align: center;
-  background: #45A8F1;
-  color: white;
-  opacity: 1;
-  padding: 5px 0px;
-}
-
-.title {
-  text-align: center;
-}
-
-.description {
-  margin-left: 10px;
-}
-
 .green {
-  color: #8DEF90;
+  color: #86F289;
+  font-weight: 400;
 }
-.green2 {
-  color: #8DEF90;
-}
-.red {
-  color: #E91E63;
-}
+
 .blue {
   color: #0298F5;
 }
 
-.axis path,
-.axis line {
-  fill: none;
-  stroke: black;
-  shape-rendering: crispEdges;
-}
-
-.axis text {
-  font-size: 12px;
+.italic {
+  font-style: italic;
+  font-weight: 400;
 }
