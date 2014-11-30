@@ -1,6 +1,6 @@
 angular.module('PunchCard', ['APIService', 'd3', 'utils'])
 
-.factory('PunchCardService', ['APIService', 'utils', function(APIService, utils){
+.factory('PunchCardService', ['APIService', 'utils', function(APIService, utils) {
   return APIService.getPunchCard().then(function(data) {
     var punchCard = {};
 
@@ -45,21 +45,18 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
   });
 }])
 
-.directive('punchCardGraph', ['d3', '$window', function(d3, $window){
+.directive('punchCardGraph', ['$window', 'd3', 'utils', function($window, d3, utils) {
   var link = function(scope, element, attrs) {
+    // // Tooltip
+    // var tooltip = d3.select("#punchCard").insert("div")
+    //   .style("opacity", 0)
+    //   .style("text-align", "center")
+    //   .style("width", "175px")
+    //   .style("height", "70px")
+    //   .style("padding", "5px");
+    
     // Main svg
-    var svg = d3.select(element[0])
-      .append('svg')
-      .style('width', '100%');
-
-    // Tooltip
-    var tooltip = d3.select("#punchCard").insert("md-whiteframe")
-      .attr("class", "md-whiteframe-z1")
-      .style("opacity", 0)
-      .style("text-align", "center")
-      .style("width", "175px")
-      .style("height", "70px")
-      .style("padding", "5px");
+    var svg = d3.select(element[0]).append('svg');
 
     // Browser onresize event
     window.onresize = function() {
@@ -73,16 +70,10 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
       scope.render(scope.data);
     });
 
-    // Colors
-    var white = '#DDDDDD';
-    var blue = '#03a9f4';
-
     // Scale blue darkness based on number of commits
     var blueScale = d3.scale.linear()
-                      .domain([0, d3.max(scope.data, function(d) {
-                         return d.commits;
-                       })])
-                      .range([white, blue]);
+      .domain([0, utils.getMost('commits', scope.data).commits])
+      .range(['#DDDDDD', '#03a9f4']);
 
     /**
      * Scope.render -> straight up d3
@@ -92,31 +83,44 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
       // Remove all previous items before render
       svg.selectAll('*').remove();
 
-      // If we don't pass any data, return out of the element
-      if (!data) return;
-
       // Size setup
       var width = element[0].parentElement.offsetWidth;
       var height = 400;
-      var xPadding = 0;
+      var yPadding = 20;
+      var xPadding = 50;
 
-      // yScale :: repo.commits -> rect height
       var yScale = d3.scale.linear()
-                     .domain([0, d3.max(data, function(d) {
-                        return d.commits;
-                      })])
-                     .range([0, height]);
+        .domain([0, utils.getMost('commits', data).commits])
+        .range([yPadding, height - yPadding]);
+
+      var yAxisScale = d3.scale.linear()
+        .domain([0, utils.getMost('commits', data).commits])
+        .range([height - yPadding, yPadding]);
+
+      var xScale = d3.scale.linear()
+        .domain([0, width])
+        .range([xPadding, width - xPadding]);
+
+      var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .orient('bottom')
+        .ticks(5);
+
+      var yAxis = d3.svg.axis()
+        .scale(yAxisScale)
+        .orient('left');
+
 
       svg.attr('width', width).attr('height', height);
       svg.selectAll('rect')
         .data(data).enter()
         .append('rect')
         .attr('height', function(d,i) {
-          return yScale(d.commits);
+          return yScale(d.commits) - yPadding;
         })
-        .attr('width', width/data.length - xPadding)
+        .attr('width', width/data.length)
         .attr('x', function(d,i) {
-          return i * (width/data.length);
+          return xScale(i * (width/data.length));
         })
         .attr('y',function(d,i) {
           return height - yScale(d.commits);
@@ -124,61 +128,55 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
         .style('fill', function(d,i) {
           return blueScale(d.commits);
         })
-        .style('opacity', 0.75)
-        .on('mouseover', function(d) {
-          console.log("mouseing over ", d);
+        .style('opacity', 0.75);
 
-          // Highlight bar
-          d3.select(this).style("opacity", 1);
+        svg.append("g")
+          .attr("class", "axis")
+          .attr("transform", "translate(0," + (height - yPadding) + ")")
+          .call(xAxis);
 
-          // Add tooltip text
-          tooltip.html(
-            '<div><span>' + numberToDay(d.day) + ' @ ' + numberToHour(d.hour) + '</span></div>' +
-            '<div><span>' + d.commits + ' commits to</span></div>' +
-            '<div><span>' + d.repos.length + ' repos</span></div>'
-          );
+        svg.append('g')
+          .attr("class", "axis")
+          .attr("transform", "translate(" + xPadding + ",0)")
+          .call(yAxis);
 
-          // Fade in tooltip
-          tooltip.transition()
-            .duration(100)
-            .style("opacity", 0.9);
-        })
-        .on('mouseout', function(d) {
-          console.log("mouseing out of : ", d);
 
-          // Remove highlight
-          d3.select(this).style("opacity", 0.75);
 
-          // Remove tooltip
-          tooltip.transition()
-            .duration(300)
-            .style("opacity", 0);
-        });
 
-      // Helper methods
-      function numberToDay(num){
-        var days = {
-          0 : 'Sunday',
-          1 : 'Monday',
-          2 : 'Tuesday',
-          3 : 'Wednesday',
-          4 : 'Thursday',
-          5 : 'Friday',
-          6 : 'Saturday'
-        };
-        return days[num];
-      }
+        // .on('mouseover', function(d) {
+        //   console.log("mouseing over ", d);
 
-      function numberToHour(num) {
-        if (num === 0) return '12am';
-        if (num === 12) return '12pm';
-        return num > 12 ? num - 12 + "pm" : num + "am";
-      }
+        //   // Highlight bar
+        //   d3.select(this).style("opacity", 1);
+
+        //   // Add tooltip text
+        //   tooltip.html(
+        //     '<div><span>' + numberToDay(d.day) + ' @ ' + numberToHour(d.hour) + '</span></div>' +
+        //     '<div><span>' + d.commits + ' commits to</span></div>' +
+        //     '<div><span>' + d.repos.length + ' repos</span></div>'
+        //   );
+
+        //   // Fade in tooltip
+        //   tooltip.transition()
+        //     .duration(100)
+        //     .style("opacity", 0.9);
+        // })
+        // .on('mouseout', function(d) {
+        //   console.log("mouseing out of : ", d);
+
+        //   // Remove highlight
+        //   d3.select(this).style("opacity", 0.75);
+
+        //   // Remove tooltip
+        //   tooltip.transition()
+        //     .duration(300)
+        //     .style("opacity", 0);
+        // });
     };
   };
 
   return {
-    restrict: 'E',
+    restrict: 'EA',
     scope: {
       data: '='
     },

@@ -16,6 +16,7 @@ angular.module('CodeFrequency', ['APIService', 'd3', 'utils'])
   });
 }])
 
+// DEPRECATED. Only here for reference.
 .directive('codeFrequencyGraph', ['d3', '$window', function(d3, $window){
   var link = function(scope, element, attrs) {
     // Main svg
