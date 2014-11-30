@@ -1,24 +1,24 @@
-<md-card>
+<div>
   <div id="punchCard" layout="horizontal">
   <h2>Commits over time</h2>
     <div flex layout="vertical" layout-align="center center">
 
-      <md-card ng-if="insight === 0">Not a <i>single hour</i> goes by where a student isn't commiting. Even at <span class="blue">{{ punchCard.leastProductiveHour }}</span> on <span class="blue">{{ punchCard.leastProductiveHourDay }},</span> there were <span class="green">{{ punchCard.leastProductiveHourRepoCount }}</span> repos worked on.
-      </md-card>
+      <div ng-if="insight === 0">Not a <i>single hour</i> goes by where a student isn't commiting. Even at <span class="blue">{{ punchCard.leastProductiveHour }}</span> on <span class="blue">{{ punchCard.leastProductiveHourDay }},</span> there were <span class="green">{{ punchCard.leastProductiveHourRepoCount }}</span> repos worked on.
+      </div>
 
-      <md-card ng-if="insight === 1">A total of <span class="green">{{ codeFrequency.totalAdditions }}</span> lines of code were written. That is <i>more than</i> the number of lines for <a href="http://www.informationisbeautiful.net/visualizations/million-lines-of-code" target="_blank" class="blue">{{ codeFrequency.totalAdditionsMapped }}</a>
-      </md-card>
+      <div ng-if="insight === 1">A total of <span class="green">{{ codeFrequency.totalAdditions }}</span> lines of code were written. That is <i>more than</i> the number of lines for <a href="http://www.informationisbeautiful.net/visualizations/million-lines-of-code" target="_blank" class="blue">{{ codeFrequency.totalAdditionsMapped }}</a>
+      </div>
 
-      <md-card ng-if="insight === 2"><span class="blue">{{ punchCard.mostProductiveDay }}</span> was the <i>most productive day</i> all week with a total of <span class=
+      <div ng-if="insight === 2"><span class="blue">{{ punchCard.mostProductiveDay }}</span> was the <i>most productive day</i> all week with a total of <span class=
         "green">{{ punchCard.mostProductiveDayCommits }}</span> commits made to <span class="blue">{{ punchCard.mostProductiveDayRepoCount }}</span> repos
-      </md-card>
+      </div>
 
-      <md-card ng-if="insight === 3">On average, <i>each student</i> wrote <span class="green">{{ codeFrequency.averageAdditions }}</span> lines of code.
-      </md-card>
+      <div ng-if="insight === 3">On average, <i>each student</i> wrote <span class="green">{{ codeFrequency.averageAdditions }}</span> lines of code.
+      </div>
 
-      <md-card ng-if="insight === 4"><span class="blue">{{ punchCard.mostProductiveHourDay }}</span> at <span class="blue">{{ punchCard.mostProductiveHour }}</span> was the single <i>most productive hour</i> all week with a total of <span class=
+      <div ng-if="insight === 4"><span class="blue">{{ punchCard.mostProductiveHourDay }}</span> at <span class="blue">{{ punchCard.mostProductiveHour }}</span> was the single <i>most productive hour</i> all week with a total of <span class=
         "green">{{ punchCard.mostProductiveHourCommits }}</span> commits made to <span class="blue">{{ punchCard.mostProductiveHourRepoCount }}</span> repos
-      </md-card>
+      </div>
 
     </div>
   </div>
@@ -28,7 +28,7 @@
   <sup>*</sup>includes library code. "Measuring programming progress by lines of code is like measuring aircraft building progress by weight" - Bill Gates
   <br>
   
-</md-card>
+</div>
 
 
 

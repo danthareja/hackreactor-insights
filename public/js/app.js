@@ -1,4 +1,4 @@
-angular.module('hrStats', ['ui.router', 'CodeFrequency', 'PunchCard', 'ngMaterial'])
+angular.module('hrStats', ['ui.router', 'CodeFrequency', 'PunchCard'])
 
 .config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
   $urlRouterProvider.otherwise('/');

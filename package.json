@@ -2,7 +2,7 @@
   "name": "hackreactor-code-visual",
   "version": "0.0.0",
   "description": "How much code does Hack Reactor actually push up?",
-  "main": "app.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "postinstall": "npm install -g bower && bower install"
