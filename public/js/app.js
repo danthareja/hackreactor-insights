@@ -15,8 +15,6 @@ angular.module('hrStats', ['ui.router', 'CodeFrequency', 'PunchCard'])
 }])
 
 .controller('AppController', ['$scope', '$interval', 'punchCard', 'codeFrequency', function($scope, $interval, punchCard, codeFrequency) {
-  console.log('cf',codeFrequency);
-  console.log('pc',punchCard);
   $scope.punchCard = punchCard;
   $scope.codeFrequency = codeFrequency;
 

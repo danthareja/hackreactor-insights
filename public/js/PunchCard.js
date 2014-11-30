@@ -120,10 +120,9 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
 
       var yAxis = d3.svg.axis()
         .scale(yAxisScale)
-        .orient('left')
-        .ticks(5);
+        .orient('left');
 
-      // filter half of the data if the width gets to a certain smaller size
+      // Responsive stuff
       if (width < 800) {
         data = data.filter(function(d, i) {
           return i % 2 || d.commits == maxCommitCount;
@@ -138,6 +137,7 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
         xAxis.tickFormat(d3.time.format('%a'));
       }
 
+      // Add bars to graph
       svg.attr('width', width).attr('height', height);
       svg.selectAll('rect')
         .data(data).enter()
@@ -155,50 +155,49 @@ angular.module('PunchCard', ['APIService', 'd3', 'utils'])
         .style('fill', function(d,i) {
           return blueScale(d.commits);
         })
-        .style('opacity', 0.75);
+        .style('opacity', 0.75)
 
-        svg.append("g")
-          .attr("class", "axis")
-          .attr("transform", "translate(0," + (height - yPadding) + ")")
-          .call(xAxis);
+      // Animations
+      .on('mouseover', function(d) {
+        console.log("mouseing over ", d);
 
-        svg.append('g')
-          .attr("class", "axis")
-          .attr("transform", "translate(" + xPadding + ",0)")
-          .call(yAxis);
+        // Highlight bar
+        d3.select(this).style("opacity", 1);
 
+        // // Add tooltip text
+        // tooltip.html(
+        //   '<div><span>' + numberToDay(d.day) + ' @ ' + numberToHour(d.hour) + '</span></div>' +
+        //   '<div><span>' + d.commits + ' commits to</span></div>' +
+        //   '<div><span>' + d.repos.length + ' repos</span></div>'
+        // );
 
+        // // Fade in tooltip
+        // tooltip.transition()
+        //   .duration(100)
+        //   .style("opacity", 0.9);
+      })
+      .on('mouseout', function(d) {
+        console.log("mouseing out of : ", d);
 
+        // Remove highlight
+        d3.select(this).style("opacity", 0.75);
 
-        // .on('mouseover', function(d) {
-        //   console.log("mouseing over ", d);
+        // // Remove tooltip
+        // tooltip.transition()
+        //   .duration(300)
+        //   .style("opacity", 0);
+      });
 
-        //   // Highlight bar
-        //   d3.select(this).style("opacity", 1);
+      // Add axis
+      svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + (height - yPadding) + ")")
+        .call(xAxis);
 
-        //   // Add tooltip text
-        //   tooltip.html(
-        //     '<div><span>' + numberToDay(d.day) + ' @ ' + numberToHour(d.hour) + '</span></div>' +
-        //     '<div><span>' + d.commits + ' commits to</span></div>' +
-        //     '<div><span>' + d.repos.length + ' repos</span></div>'
-        //   );
-
-        //   // Fade in tooltip
-        //   tooltip.transition()
-        //     .duration(100)
-        //     .style("opacity", 0.9);
-        // })
-        // .on('mouseout', function(d) {
-        //   console.log("mouseing out of : ", d);
-
-        //   // Remove highlight
-        //   d3.select(this).style("opacity", 0.75);
-
-        //   // Remove tooltip
-        //   tooltip.transition()
-        //     .duration(300)
-        //     .style("opacity", 0);
-        // });
+      svg.append('g')
+        .attr("class", "axis")
+        .attr("transform", "translate(" + xPadding + ",0)")
+        .call(yAxis);
     };
   };
 
