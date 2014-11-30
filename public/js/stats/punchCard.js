@@ -75,7 +75,7 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
     var maxCommitCount = utils.getMost('commits', scope.data).commits;
     var blueScale = d3.scale.linear()
       .domain([0, maxCommitCount])
-      .range(['#FFFFFF', '#03a9f4']);
+      .range(['#FFFFFF', '#0298F5']);
 
     /**
      * Scope.render -> straight up d3
@@ -88,8 +88,16 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
       // Size setup
       var width = element[0].parentElement.offsetWidth;
       var height = 400;
+
+      // Responsive height
+      if (width < 800 && width >= 550) {
+        height = 300;
+      } else if (width < 550) {
+        height = 200;
+      }
+
       var yPadding = 20;
-      var xPadding = 50;
+      var xPadding = 40;
 
       // Graph scales
       var yScale = d3.scale.linear()
@@ -120,7 +128,8 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
 
       var yAxis = d3.svg.axis()
         .scale(yAxisScale)
-        .orient('left');
+        .orient('left')
+        .ticks(5);
 
       // Responsive stuff
       if (width < 800) {
@@ -162,7 +171,9 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
         console.log("mouseing over ", d);
 
         // Highlight bar
-        d3.select(this).style("opacity", 1);
+        d3.select(this)
+        .style('opacity', 0.75)
+        .style('fill', '#65D868');
 
         // // Add tooltip text
         // tooltip.html(
@@ -180,7 +191,11 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
         console.log("mouseing out of : ", d);
 
         // Remove highlight
-        d3.select(this).style("opacity", 0.75);
+        d3.select(this)
+        .style("opacity", 0.75)
+        .style('fill', function(d,i) {
+          return blueScale(d.commits);
+        });
 
         // // Remove tooltip
         // tooltip.transition()

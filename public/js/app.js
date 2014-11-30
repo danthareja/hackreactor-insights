@@ -23,7 +23,7 @@ angular.module('hrInsights', ['ui.router', 'hrInsights.stats'])
     $scope.insight = $scope.insight === 4 ? 0 : $scope.insight + 1;
   };
   $scope.insight = 0;
-  $interval(nextInsight, 4000);
+  $interval(nextInsight, 5000);
 }]);
 
 

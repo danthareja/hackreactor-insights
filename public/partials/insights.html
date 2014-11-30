@@ -1,33 +1,25 @@
 <div>
-  <div id="punchCard" layout="horizontal">
-  <h2>Commits over time</h2>
-    <div flex layout="vertical" layout-align="center center">
+  <div class="insight">
+    <div ng-if="insight === 0">Not a <i>single hour</i> goes by where a student isn't commiting. Even at <span class="green2">{{ punchCard.leastProductiveHour }}</span> on <span class="green2">{{ punchCard.leastProductiveHourDay }}</span>, there were <span class="green">{{ punchCard.leastProductiveHourRepoCount }}</span> repos worked on.
+    </div>
 
-      <div ng-if="insight === 0">Not a <i>single hour</i> goes by where a student isn't commiting. Even at <span class="blue">{{ punchCard.leastProductiveHour }}</span> on <span class="blue">{{ punchCard.leastProductiveHourDay }},</span> there were <span class="green">{{ punchCard.leastProductiveHourRepoCount }}</span> repos worked on.
-      </div>
+    <div ng-if="insight === 1">A total of <span class="green">{{ codeFrequency.totalAdditions }}</span> lines of code were written last week. That is <i>more than</i> the number of lines for <span class="green2">{{ codeFrequency.totalAdditionsMapped }}</span>
+    </div>
 
-      <div ng-if="insight === 1">A total of <span class="green">{{ codeFrequency.totalAdditions }}</span> lines of code were written. That is <i>more than</i> the number of lines for <a href="http://www.informationisbeautiful.net/visualizations/million-lines-of-code" target="_blank" class="blue">{{ codeFrequency.totalAdditionsMapped }}</a>
-      </div>
+    <div ng-if="insight === 2"><span class="green2">{{ punchCard.mostProductiveDay }}</span> was the <i>most productive day</i> all week with a total of <span class=
+      "green">{{ punchCard.mostProductiveDayCommits }}</span> commits made to <span class="green2">{{ punchCard.mostProductiveDayRepoCount }}</span> repos
+    </div>
 
-      <div ng-if="insight === 2"><span class="blue">{{ punchCard.mostProductiveDay }}</span> was the <i>most productive day</i> all week with a total of <span class=
-        "green">{{ punchCard.mostProductiveDayCommits }}</span> commits made to <span class="blue">{{ punchCard.mostProductiveDayRepoCount }}</span> repos
-      </div>
+    <div ng-if="insight === 3">On average, <i>each student</i> wrote <span class="green">{{ codeFrequency.averageAdditions }}</span> lines of code last week.
+    </div>
 
-      <div ng-if="insight === 3">On average, <i>each student</i> wrote <span class="green">{{ codeFrequency.averageAdditions }}</span> lines of code.
-      </div>
-
-      <div ng-if="insight === 4"><span class="blue">{{ punchCard.mostProductiveHourDay }}</span> at <span class="blue">{{ punchCard.mostProductiveHour }}</span> was the single <i>most productive hour</i> all week with a total of <span class=
-        "green">{{ punchCard.mostProductiveHourCommits }}</span> commits made to <span class="blue">{{ punchCard.mostProductiveHourRepoCount }}</span> repos
-      </div>
-
+    <div ng-if="insight === 4"><span class="green2">{{ punchCard.mostProductiveHourDay }}</span> at <span class="green2">{{ punchCard.mostProductiveHour }}</span> was the single <i>most productive hour</i> all week with a total of <span class=
+      "green">{{ punchCard.mostProductiveHourCommits }}</span> commits made to <span class="green2">{{ punchCard.mostProductiveHourRepoCount }}</span> repos
     </div>
   </div>
   <div punch-card-graph data="punchCard.data"></div>
-  A commit includes any permanent change of to a codebase, whether it's adding lines, deleting lines, or otherwise
-  <br>
-  <sup>*</sup>includes library code. "Measuring programming progress by lines of code is like measuring aircraft building progress by weight" - Bill Gates
-  <br>
-  
+  <h3 class="title">Number of commits pushed at Hack Reactor last week</h3>
+  <!-- <h5 class="description">A commit includes any permanent change of to a codebase, whether it's adding code, deleting code, or some other change. (include library code)</h5> -->
 </div>
 
 

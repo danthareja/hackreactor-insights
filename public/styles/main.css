@@ -1,21 +1,67 @@
 @import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro);
+@import url(http://fonts.googleapis.com/css?family=Merriweather);
 
 body {
-  font-family: "Source Sans Pro","Helvetica Neue","Helvetica",Arial,sans-serif;
+  font-family: "Source Sans Pro","Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
+  font-weight: 200;
+  font-size: 1em;
+  margin: 0;
+  color: #262626;
+  text-rendering: optimizeLegibility
 }
 
-a {
-  text-decoration:none;
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Merriweather",Georgia,serif;
+  font-weight: 300;
+  font-style: normal;
+  color: #262626;
+  text-rendering: optimizeLegibility;
+  margin-top: 0;
+  margin-bottom: 0;
+  line-height: 1.5em;
+}
+
+.tooltip {
+  height: 10%;
+  width: 30%;
+  color: #FFFFFF;
+  background-color: #45A8F1;
+  position: absolute;
+  right: 0;
+  margin-right: 10px;
+  padding: 10px;
+  text-align: right;
+}
+
+.insight {
+  font-size: 1.2rem;
+  width: 100%;
+  text-align: center;
+  background: #45A8F1;
+  color: white;
+  opacity: 1;
+  padding: 5px 0px;
+}
+
+.title {
+  text-align: center;
+}
+
+.description {
+  margin-left: 10px;
 }
 
 .green {
-  color: #00e676;
+  color: #8DEF90;
+}
+.green2 {
+  color: #8DEF90;
 }
 .red {
-  color: #e91e63;
+  color: #E91E63;
 }
 .blue {
-  color: #03a9f4;
+  color: #0298F5;
 }
 
 .axis path,
