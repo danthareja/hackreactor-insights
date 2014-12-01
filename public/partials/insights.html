@@ -1,19 +1,19 @@
 <div>
-  <div >
-    <div class="insight" ng-if="insight === 0">Not a <span class="italic">single hour</span> goes by where a student isn't writing code. Even at <span class="green">{{ punchCard.leastProductiveHour }}</span> on <span class="green">{{ punchCard.leastProductiveHourDay }}</span>, there were <span class="green">{{ punchCard.leastProductiveHourRepoCount }}</span> repos being worked on.
+  <div class="insights">
+    <div class="insight" ng-show="insight === 0">Not a <span class="italic">single hour</span> goes by where a student isn't writing code. Even at <span class="green">{{ punchCard.leastProductiveHour }}</span> on <span class="green">{{ punchCard.leastProductiveHourDay }}</span>, there were <span class="green">{{ punchCard.leastProductiveHourRepoCount }}</span> repos being worked on.
     </div>
 
-    <div class="insight" ng-if="insight === 1">A total of <span class="green">{{ codeFrequency.totalAdditions }}</span> lines of code were written last week. That is <span class="italic">more than</span> the number of lines for <span class="green">{{ codeFrequency.totalAdditionsMapped }}</span>
+    <div class="insight" ng-show="insight === 1">A total of <span class="green">{{ codeFrequency.totalAdditions }}</span> lines of code were written last week. That is <span class="italic">more than</span> the number of lines for <span class="green">{{ codeFrequency.totalAdditionsMapped }}</span>
     </div>
 
-    <div class="insight" ng-if="insight === 2"><span class="green">{{ punchCard.mostProductiveDay }}</span> was the <span class="italic">most productive day</span> all week with a total of <span class=
+    <div class="insight" ng-show="insight === 2"><span class="green">{{ punchCard.mostProductiveDay }}</span> was the <span class="italic">most productive day</span> all week with a total of <span class=
       "green">{{ punchCard.mostProductiveDayCommits }}</span> commits made to <span class="green">{{ punchCard.mostProductiveDayRepoCount }}</span> repos
     </div>
 
-    <div class="insight" ng-if="insight === 3">On average, <span class="italic">each student</span> wrote <span class="green">{{ codeFrequency.averageAdditions }}</span> lines of code last week.
+    <div class="insight" ng-show="insight === 3">On average, <span class="italic">each student</span> wrote <span class="green">{{ codeFrequency.averageAdditions }}</span> lines of code last week.
     </div>
 
-    <div class="insight" ng-if="insight === 4"><span class="green">{{ punchCard.mostProductiveHourDay }}</span> at <span class="green">{{ punchCard.mostProductiveHour }}</span> was the single <span class="italic">most productive hour</span> all week with a total of <span class=
+    <div class="insight" ng-show="insight === 4"><span class="green">{{ punchCard.mostProductiveHourDay }}</span> at <span class="green">{{ punchCard.mostProductiveHour }}</span> was the single <span class="italic">most productive hour</span> all week with a total of <span class=
       "green">{{ punchCard.mostProductiveHourCommits }}</span> commits made to <span class="green">{{ punchCard.mostProductiveHourRepoCount }}</span> repos
     </div>
   </div>

@@ -1,5 +1,21 @@
 @import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,300italic,400italic);
 
+@media all and (min-width: 800px) {
+  html {
+    font-size: 16px;
+  }
+}
+@media all and (max-width: 799px) and (min-width: 550px) {
+  html {
+    font-size: 14px;
+  }
+}
+@media all and (max-width: 549px) and (min-width: 320px) {
+  html {
+    font-size: 12px;
+  }
+}
+
 body {
   font-family: "Source Sans Pro","Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;
   font-weight: 300;
@@ -17,7 +33,7 @@ body {
 }
 
 .axis text {
-  font-size: 14px;
+  font-size: 0.8em;
 }
 
 .title {
@@ -31,13 +47,40 @@ body {
   margin-left: 10px;
 }
 
-.insight {
-  font-size: 1.2em;
+.insights {
   width: 100%;
-  text-align: center;
+  height: 80px;
+  position: relative;
   background: #45A8F1;
-  color: white;
+}
+
+.insight {
+  top: 0; left: 0; bottom: 0; right: 0;
+  height: 50%;
+  width: 100%;
+  position: absolute;
+  margin: auto;
   padding: 15px 0px;
+  overflow: auto;
+  font-size: 1.2em;
+  text-align: center;
+  color: white;
+}
+
+.insight.ng-hide-add-active {
+  -webkit-transition: 0.75s linear all;
+  transition: 0.75s linear all;
+}
+
+.insight.ng-hide-remove-active {
+  -webkit-transition: 0.75s linear all;
+  transition: 0.75s linear all;
+  -webkit-transition-delay: 0.75s;
+  transition-delay: 0.75s;
+}
+
+.insight.ng-hide {
+  opacity: 0;
 }
 
 .tooltip {

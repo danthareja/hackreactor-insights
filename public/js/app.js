@@ -1,4 +1,4 @@
-angular.module('hrInsights', ['ui.router', 'hrInsights.stats'])
+angular.module('hrInsights', ['ui.router', 'ngAnimate', 'hrInsights.stats'])
 
 .config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
   $urlRouterProvider.otherwise('/');
@@ -23,7 +23,7 @@ angular.module('hrInsights', ['ui.router', 'hrInsights.stats'])
     $scope.insight = $scope.insight === 4 ? 0 : $scope.insight + 1;
   };
   $scope.insight = 0;
-  $interval(nextInsight, 5000);
+  $interval(nextInsight, 10000);
 }]);
 
 

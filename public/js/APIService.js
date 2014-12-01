@@ -1,15 +1,18 @@
-angular.module('hrInsights.APIService', ['LocalStorageModule'])
+angular.module('hrInsights.APIService', [])
 // TODO: figure out timing on localStorage reup
-.service('APIService', ['$http', '$q', 'localStorageService', function($http, $q, localStorageService) {
+.service('APIService', ['$http', '$q', function($http, $q) {
   this.getCodeFrequency = function() {
+    console.log('getting codeFrequency...');
     var q = $q.defer();
-    var codeFrequency = localStorageService.get('codeFrequency');
+    var codeFrequency = localStorage.getItem('hr.codeFrequency');
 
     if (codeFrequency) {
-      q.resolve(codeFrequency);
+      console.log('got codeFrequency, it was in localStorage');
+      q.resolve(JSON.parse(codeFrequency));
     } else {
       $http.get("/api/stats/code_frequency").then(function(data) {
-        localStorageService.set('codeFrequency', data.data);
+        localStorage.setItem('hr.codeFrequency', JSON.stringify(data.data));
+        console.log('got codeFrequency, from the api');
         q.resolve(data.data);
       });
     }
@@ -18,14 +21,17 @@ angular.module('hrInsights.APIService', ['LocalStorageModule'])
   };
 
   this.getPunchCard = function() {
+    console.log('getting punchCard...');
     var q = $q.defer();
-    var punchCard = localStorageService.get('punchCard');
+    var punchCard = localStorage.getItem('hr.punchCard');
 
     if (punchCard) {
-      q.resolve(punchCard);
+      console.log('got punchCard, it was in localStorage');
+      q.resolve(JSON.parse(punchCard));
     } else {
       $http.get("/api/stats/punch_card").then(function(data) {
-        localStorageService.set('punchCard', data.data);
+        localStorage.setItem('hr.punchCard', JSON.stringify(data.data));
+        console.log('got punchCard, from the api');
         q.resolve(data.data);
       });
     }
