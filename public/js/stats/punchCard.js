@@ -45,7 +45,7 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
   });
 }])
 
-.directive('punchCardGraph', ['$window', 'd3', 'utils', function($window, d3, utils) {
+.directive('punchCardGraph', ['$window', '$timeout', 'd3', 'utils', function($window, $timeout, d3, utils) {
   var link = function(scope, element, attrs) {
     
     // Main svg
@@ -173,14 +173,16 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
         .style('opacity', 0.75)
         .style('fill', '#65D868');
 
-        // Add tooltip text
-        tooltip.html(
-          '<span class="italic">' + utils.numberToDay(d.day) + ' @ ' + utils.numberToHour(d.hour) + '</span>' + '<br>' +
-          '<span style="font-weight:400">' + d.commits + '</span>' + ' commits to ' + '<br>' +
-          '<span style="font-weight:400">' + d.repos.length + '</span>' + ' repos'
-        );
+        var addTextToTooltip = function() {
+          tooltip.html(
+            '<span class="italic">' + utils.numberToDay(d.day) + ' @ ' + utils.numberToHour(d.hour) + '</span>' + '<br>' +
+            '<span style="font-weight:400">' + d.commits + '</span>' + ' commits to ' + '<br>' +
+            '<span style="font-weight:400">' + d.repos.length + '</span>' + ' repos'
+          );
+        };
 
         // Fade in tooltip
+        $timeout(addTextToTooltip, 300);
         tooltip.style('margin', '10px');
         tooltip.transition()
           .duration(500)
