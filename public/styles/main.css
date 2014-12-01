@@ -4,15 +4,24 @@
   html {
     font-size: 16px;
   }
+  .tooltip {
+    height: 80px;
+  }
 }
 @media all and (max-width: 799px) and (min-width: 550px) {
   html {
     font-size: 14px;
   }
+  .tooltip {
+    height: 75px;
+  }
 }
 @media all and (max-width: 549px) and (min-width: 320px) {
   html {
     font-size: 12px;
+  }
+  .tooltip {
+    height: 65px;
   }
 }
 
@@ -59,7 +68,6 @@ body {
   height: 50%;
   width: 100%;
   position: absolute;
-  margin: auto;
   padding: 15px 0px;
   overflow: auto;
   font-size: 1.2em;
@@ -84,7 +92,6 @@ body {
 }
 
 .tooltip {
-  height: 80px;
   color: #FFFFFF;
   background-color: #65D868;
   position: absolute;

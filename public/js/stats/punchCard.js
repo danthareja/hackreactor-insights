@@ -128,11 +128,14 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
         .orient('left');
 
       // Responsive stuff
+      var tooltipWidth = '135px';
+
       if (width < 800) {
         data = data.filter(function(d, i) {
           return i % 2 || d.commits == maxCommitCount;
         });
         xAxis.ticks(7);
+        tooltipWidth = '120px';
       }
 
       if (width < 550) {
@@ -140,6 +143,7 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
           return i % 3 || d.commits == maxCommitCount;
         });
         xAxis.tickFormat(d3.time.format('%a'));
+        tooltipWidth = '100px';
       }
 
       // Add bars to graph
@@ -181,7 +185,7 @@ angular.module('hrInsights.stats.punchCard', ['hrInsights.APIService', 'hrInsigh
         tooltip.transition()
           .duration(500)
           .ease('cubic-out')
-          .style('width', '135px')
+          .style('width', tooltipWidth)
           .style('opacity', 1);
       })
 
