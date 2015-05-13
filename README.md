@@ -1,4 +1,4 @@
 hackreactor-code-visual
 =======================
 
-How much code really gets pushed at Hack Reactor? Let's find out.
+How much code really gets pushed at Hack Reactor? Let's find out!
